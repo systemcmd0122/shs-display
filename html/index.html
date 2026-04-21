@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>頭痛予報 — BAROMETRIC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg0: #050709;
+  --bg1: #0b0e17;
+  --bg2: #10141f;
+  --bg3: #161b28;
+  --border:  rgba(80,120,255,0.10);
+  --border2: rgba(80,120,255,0.22);
+  --text-primary:   #dce8ff;
+  --text-secondary: rgba(190,210,255,0.60);
+  --text-dim:       rgba(130,160,220,0.38);
+  --accent-blue:   #4a8fff;
+  --accent-cyan:   #00d4ff;
+  --accent-green:  #00e5a0;
+  --accent-orange: #ff8c42;
+  --accent-red:    #ff4560;
+  --glow-blue:  rgba(74,143,255,0.18);
+  --glow-cyan:  rgba(0,212,255,0.14);
+  --glow-green: rgba(0,229,160,0.14);
+  --font-mono: 'Space Mono', monospace;
+  --font-jp:   'Noto Sans JP', sans-serif;
+  --r-lg: 14px; --r-md: 10px; --r-sm: 7px;
+  --page-pad: clamp(10px, 2vw, 28px);
+  --gap: clamp(10px, 1.2vw, 16px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--bg0);
+  color: var(--text-primary);
+  font-family: var(--font-jp);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(74,143,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74,143,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed; top: -300px; right: -300px;
+  width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(74,143,255,0.05) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── PAGE SHELL ── */
+.page {
+  position: relative; z-index: 1;
+  width: 100%;
+  max-width: 100%;
+  padding: var(--page-pad) var(--page-pad) calc(var(--page-pad) + env(safe-area-inset-bottom));
+  padding-left: max(var(--page-pad), env(safe-area-inset-left));
+  padding-right: max(var(--page-pad), env(safe-area-inset-right));
+  display: flex; flex-direction: column; gap: var(--gap);
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  padding-bottom: clamp(10px, 1.2vw, 16px);
+  border-bottom: 1px solid var(--border);
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 20px var(--glow-blue); flex-shrink: 0;
+}
+.logo-text {
+  font-family: var(--font-mono); font-size: clamp(13px, 1.2vw, 17px); font-weight: 700;
+  letter-spacing: 0.16em; color: var(--accent-cyan);
+}
+.logo-sub {
+  font-family: var(--font-mono); font-size: clamp(8px, 0.7vw, 10px);
+  color: var(--text-dim); letter-spacing: 0.08em; margin-top: 2px;
+}
+.header-right { display: flex; align-items: center; gap: 14px; }
+.live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,229,160,0.09);
+  border: 1px solid rgba(0,229,160,0.28);
+  border-radius: 20px; padding: 4px 12px;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--accent-green); letter-spacing: 0.1em;
+}
+.live-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent-green); animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%    { opacity:.3; transform:scale(.8); }
+}
+.header-clock { text-align: right; }
+.clock-time {
+  font-family: var(--font-mono); font-size: clamp(16px, 1.8vw, 24px); font-weight: 700;
+  color: var(--text-primary); letter-spacing: 0.04em; line-height: 1;
+}
+.clock-date {
+  font-family: var(--font-mono); font-size: clamp(8px, 0.7vw, 10px);
+  color: var(--text-dim); letter-spacing: 0.08em; margin-top: 4px;
+}
+
+/* ── ALERT ── */
+.alert-strip {
+  display: none; align-items: center; gap: 10px;
+  background: rgba(255,69,96,0.07);
+  border: 1px solid rgba(255,69,96,0.22);
+  border-radius: var(--r-md); padding: 10px 14px;
+  font-size: 12px; color: rgba(255,140,155,0.9);
+}
+.alert-strip.visible { display: flex; }
+
+/* ── 2-COL BODY GRID ── */
+.body-grid {
+  display: grid;
+  grid-template-columns: clamp(280px, 26vw, 380px) 1fr;
+  gap: var(--gap);
+  align-items: start;
+  flex: 1;
+}
+.left-col  { display: flex; flex-direction: column; gap: var(--gap); }
+.right-col { display: flex; flex-direction: column; gap: var(--gap); }
+
+/* ── CARD BASE ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: clamp(14px,1.5vw,20px) clamp(14px,1.6vw,22px);
+  position: relative; overflow: hidden;
+}
+.card-accent::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--card-accent, var(--accent-blue));
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+.card-label {
+  font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 12px;
+}
+
+/* ── RISK CARD ── */
+.risk-top {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; margin-bottom: 14px;
+}
+.risk-pill {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; padding: 4px 12px;
+  border-radius: 20px; border: 1px solid; text-transform: uppercase;
+  white-space: nowrap;
+}
+.risk-score-num {
+  font-family: var(--font-mono); font-size: clamp(48px, 5.5vw, 72px); font-weight: 700;
+  line-height: 1; letter-spacing: -0.02em;
+  background: var(--risk-gradient, linear-gradient(135deg, var(--accent-green), var(--accent-cyan)));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.risk-score-denom {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-dim); margin-top: 4px;
+}
+.risk-trend {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-dim); margin-top: 8px;
+}
+
+/* ── PROGRESS ── */
+.progress-track {
+  height: 4px; border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  margin: 12px 0 6px;
+}
+.progress-fill {
+  height: 100%; border-radius: 4px;
+  background: var(--risk-bar, var(--accent-green));
+  box-shadow: 0 0 8px var(--risk-glow, var(--glow-green));
+  transition: width .8s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+}
+.progress-fill::after {
+  content: ''; position: absolute; right: -1px; top: -3px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--risk-bar, var(--accent-green));
+  box-shadow: 0 0 8px var(--risk-glow, var(--glow-green));
+}
+.progress-segs { display: flex; justify-content: space-between; }
+.progress-seg {
+  font-family: var(--font-mono); font-size: clamp(7px, 0.65vw, 8px);
+  color: var(--text-dim); letter-spacing: 0.03em;
+}
+
+/* ── METRICS ── */
+.metrics-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: clamp(7px,0.8vw,12px);
+}
+.metric-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: clamp(10px,1.1vw,15px) clamp(10px,1.1vw,14px);
+  position: relative; overflow: hidden; transition: border-color .25s;
+}
+.metric-card:hover { border-color: var(--border2); }
+.metric-card::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg,transparent,var(--m-color,var(--accent-blue)),transparent);
+  opacity: .4;
+}
+.metric-icon {
+  display: block; width: 15px; height: 15px; margin-bottom: 8px;
+  color: var(--m-color, var(--accent-blue));
+  filter: drop-shadow(0 0 4px var(--m-color, var(--accent-blue)));
+}
+.metric-lbl {
+  font-family: var(--font-mono); font-size: 9px; color: var(--text-dim);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 3px;
+}
+.metric-val {
+  font-family: var(--font-mono); font-size: clamp(16px, 1.8vw, 22px); font-weight: 700;
+  color: var(--m-color, var(--text-primary)); line-height: 1;
+  text-shadow: 0 0 14px var(--m-glow, transparent);
+}
+.metric-unit {
+  font-family: var(--font-mono); font-size: 9px;
+  color: var(--text-dim); margin-top: 3px;
+}
+
+/* ── STATS ── */
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: clamp(7px,0.8vw,12px); }
+.stat-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: clamp(10px,1vw,13px) clamp(10px,1.1vw,14px);
+}
+.stat-lbl {
+  font-family: var(--font-mono); font-size: clamp(7px, 0.6vw, 9px); color: var(--text-dim);
+  letter-spacing: 0.08em; margin-bottom: 5px;
+}
+.stat-val { font-family: var(--font-mono); font-size: clamp(12px, 1.3vw, 15px); font-weight: 700; }
+
+/* ── CHART CARD ── */
+.chart-tabs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+.tab-btn {
+  font-family: var(--font-mono); font-size: clamp(9px, 0.85vw, 11px); letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 5px 12px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-dim); cursor: pointer; transition: all .18s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.tab-btn svg { flex-shrink: 0; opacity: 0.7; transition: opacity .18s; }
+.tab-btn:hover { border-color: var(--border2); color: var(--text-secondary); }
+.tab-btn:hover svg { opacity: 1; }
+.tab-btn.on {
+  background: var(--tab-color, var(--accent-blue)); color: var(--bg0);
+  border-color: transparent;
+  box-shadow: 0 0 12px var(--tab-glow, var(--glow-blue));
+}
+.tab-btn.on svg { opacity: 1; }
+
+/* Auto-rotate badge */
+.auto-rotate-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--accent-cyan); letter-spacing: 0.06em;
+  background: rgba(0,212,255,0.07);
+  border: 1px solid rgba(0,212,255,0.20);
+  border-radius: 20px; padding: 4px 10px;
+  cursor: pointer; transition: all .2s;
+  user-select: none;
+}
+.auto-rotate-badge:hover { background: rgba(0,212,255,0.14); border-color: rgba(0,212,255,0.40); }
+.auto-rotate-badge.paused { color: var(--text-dim); background: rgba(130,160,220,0.05); border-color: rgba(130,160,220,0.12); }
+.auto-rotate-badge svg { animation: spin-slow 3s linear infinite; }
+.auto-rotate-badge.paused svg { animation: none; opacity: 0.4; }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.chart-header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 10px;
+}
+.chart-title { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+.chart-range {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-dim); font-variant-numeric: tabular-nums;
+}
+.chart-wrap { position: relative; height: clamp(220px, 30vw, 420px); }
+
+/* ── MINI SPARKLINES ── */
+.mini-row { display: grid; grid-template-columns: repeat(3,1fr); gap: clamp(7px,0.8vw,12px); }
+.mini-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: clamp(10px,1vw,14px);
+}
+.mini-title {
+  font-family: var(--font-mono); font-size: clamp(7px, 0.6vw, 9px); color: var(--text-dim);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 5px;
+}
+.mini-val {
+  font-family: var(--font-mono); font-size: clamp(12px, 1.2vw, 15px); font-weight: 700;
+  color: var(--m-color, var(--text-primary)); margin-bottom: 7px;
+}
+.mini-wrap { height: clamp(52px, 5.5vw, 72px); position: relative; }
+
+/* ── FOOTER ── */
+.footer {
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  padding-top: 10px; border-top: 1px solid var(--border);
+}
+.footer-left { display: flex; align-items: center; gap: 10px; }
+.refresh-ring { position: relative; width: 34px; height: 34px; flex-shrink: 0; }
+.refresh-ring svg { transform: rotate(-90deg); }
+.ring-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 8px; color: var(--accent-cyan);
+}
+.footer-time {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 0.06em;
+}
+.sheet-link {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--accent-blue); text-decoration: none;
+  letter-spacing: 0.06em; opacity: .75;
+  display: flex; align-items: center; gap: 5px; transition: opacity .2s;
+}
+.sheet-link:hover { opacity: 1; }
+
+/* ── ANIMATIONS ── */
+@keyframes fade-up {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.card, .metric-card, .stat-card, .mini-card { animation: fade-up .45s ease backwards; }
+@keyframes scan-flash {
+  0%,100%{ opacity:1; }
+  50%    { opacity:.6; }
+}
+.flash .metric-val,
+.flash .risk-score-num,
+.flash .stat-val { animation: scan-flash .3s ease; }
+
+/* ══════════════════════════════════════════
+   RESPONSIVE — TABLET (768–1099px)
+══════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .body-grid { grid-template-columns: 280px 1fr; }
+  .chart-wrap { height: 260px; }
+}
+
+/* ══════════════════════════════════════════
+   RESPONSIVE — MOBILE (≤767px)
+══════════════════════════════════════════ */
+@media (max-width: 767px) {
+  :root {
+    --page-pad: 12px;
+    --gap: 10px;
+  }
+
+  /* Header: keep on one row, compact */
+  .logo-icon { width: 32px; height: 32px; }
+  .live-badge { padding: 3px 9px; font-size: 9px; }
+  .logo-sub { display: none; }
+
+  /* Stack layout: left → right */
+  .body-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Risk card — more compact */
+  .risk-score-num { font-size: 52px; }
+  .card-label { margin-bottom: 8px; }
+
+  /* Metrics: 3 across on mobile */
+  .metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+  }
+  .metric-card { padding: 10px 9px; }
+  .metric-icon { width: 13px; height: 13px; margin-bottom: 6px; }
+  .metric-val { font-size: 16px; }
+  .metric-unit { font-size: 8px; }
+  .metric-lbl { font-size: 8px; }
+
+  /* Stats row */
+  .stats-row { gap: 7px; }
+  .stat-card { padding: 9px 10px; }
+  .stat-val { font-size: 13px; }
+  .stat-lbl { font-size: 7px; }
+
+  /* Chart */
+  .chart-wrap { height: 220px; }
+  .tab-btn { padding: 5px 11px; font-size: 9px; }
+
+  /* Sparklines: horizontal 3 across */
+  .mini-row { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  .mini-card { padding: 10px 9px; }
+  .mini-val { font-size: 13px; margin-bottom: 5px; }
+  .mini-wrap { height: 48px; }
+  .mini-title { font-size: 7px; }
+  
+  /* Progress segs — hide middle ones on tiny screens */
+  .progress-seg:nth-child(3) { display: none; }
+}
+
+/* ── Extra small (≤380px) ── */
+@media (max-width: 380px) {
+  .clock-time { font-size: 14px; }
+  .clock-date { display: none; }
+  .metrics-grid { grid-template-columns: repeat(3,1fr); gap: 5px; }
+  .metric-val { font-size: 14px; }
+  .risk-score-num { font-size: 44px; }
+  .mini-row { grid-template-columns: repeat(3,1fr); gap: 5px; }
+  .progress-seg:nth-child(2),
+  .progress-seg:nth-child(4) { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">BAROMETRIC</div>
+        <div class="logo-sub">頭痛予報ダッシュボード</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><span class="live-dot"></span>LIVE</div>
+      <div class="header-clock">
+        <div class="clock-time" id="clockTime">--:--:--</div>
+        <div class="clock-date" id="clockDate">----/--/--</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ALERT -->
+  <div class="alert-strip" id="alertStrip">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <span id="alertText"></span>
+  </div>
+
+  <!-- BODY GRID -->
+  <div class="body-grid">
+
+    <!-- LEFT -->
+    <div class="left-col">
+
+      <!-- Risk -->
+      <div class="card card-accent" id="riskCard">
+        <div class="card-label">// RISK ASSESSMENT</div>
+        <div class="risk-top">
+          <div>
+            <div class="risk-score-num" id="riskScore">0.000</div>
+            <div class="risk-score-denom">/ 5.000 — 頭痛予測スコア</div>
+            <div class="risk-trend">
+              <svg id="trendIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0">
+                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+              </svg>
+              <span id="trendText">計測中…</span>
+            </div>
+          </div>
+          <span class="risk-pill" id="riskPill">---</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+        <div class="progress-segs">
+          <span class="progress-seg">通常</span>
+          <span class="progress-seg">やや注意</span>
+          <span class="progress-seg">注意</span>
+          <span class="progress-seg">警戒</span>
+          <span class="progress-seg">超警戒</span>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card" style="--m-color:var(--accent-blue);--m-glow:var(--glow-blue)">
+          <span class="metric-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </span>
+          <div class="metric-lbl">気圧</div>
+          <div class="metric-val" id="mPress">----</div>
+          <div class="metric-unit">hPa</div>
+        </div>
+        <div class="metric-card" style="--m-color:var(--accent-orange);--m-glow:rgba(255,140,66,.2)">
+          <span class="metric-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+            </svg>
+          </span>
+          <div class="metric-lbl">温度</div>
+          <div class="metric-val" id="mTemp">--.-</div>
+          <div class="metric-unit">℃</div>
+        </div>
+        <div class="metric-card" style="--m-color:var(--accent-cyan);--m-glow:var(--glow-cyan)">
+          <span class="metric-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+          </span>
+          <div class="metric-lbl">湿度</div>
+          <div class="metric-val" id="mHumid">--</div>
+          <div class="metric-unit">%</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-lbl">本日 最高気圧</div>
+          <div class="stat-val" style="color:var(--accent-cyan)" id="sMax">---</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">本日 最低気圧</div>
+          <div class="stat-val" style="color:var(--accent-blue)" id="sMin">---</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-lbl">変動幅</div>
+          <div class="stat-val" style="color:var(--accent-orange)" id="sRange">---</div>
+        </div>
+      </div>
+
+    </div><!-- /left-col -->
+
+    <!-- RIGHT -->
+    <div class="right-col">
+
+      <!-- Main chart -->
+      <div class="card">
+        <div class="chart-tabs" id="tabRow">
+          <button class="tab-btn on" data-mode="press" style="--tab-color:var(--accent-blue);--tab-glow:var(--glow-blue)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10"/><polyline points="16 6 22 12 16 18"/></svg>
+            気圧
+          </button>
+          <button class="tab-btn" data-mode="pred" style="--tab-color:var(--accent-green);--tab-glow:var(--glow-green)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            予測スコア
+          </button>
+          <button class="tab-btn" data-mode="temp" style="--tab-color:var(--accent-orange);--tab-glow:rgba(255,140,66,.2)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+            温度
+          </button>
+          <button class="tab-btn" data-mode="humid" style="--tab-color:#a78bfa;--tab-glow:rgba(167,139,250,.2)">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+            湿度
+          </button>
+          <div class="auto-rotate-badge" id="autoRotateBadge" title="自動切替中">
+            <svg id="rotateSvg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.77"/></svg>
+            <span id="rotateCountdown">15</span>s
+          </div>
+        </div>
+        <div class="chart-header">
+          <span class="chart-title" id="chartTtl">気圧の推移</span>
+          <span class="chart-range" id="chartRange"></span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="mc" role="img" aria-label="時系列グラフ"></canvas>
+        </div>
+      </div>
+
+      <!-- Mini sparklines -->
+      <div class="mini-row">
+        <div class="mini-card" style="--m-color:var(--accent-blue)">
+          <div class="mini-title">気圧 (直近30点)</div>
+          <div class="mini-val" id="miniPressVal">---</div>
+          <div class="mini-wrap"><canvas id="mcPress"></canvas></div>
+        </div>
+        <div class="mini-card" style="--m-color:var(--accent-orange)">
+          <div class="mini-title">温度 (直近30点)</div>
+          <div class="mini-val" id="miniTempVal">---</div>
+          <div class="mini-wrap"><canvas id="mcTemp"></canvas></div>
+        </div>
+        <div class="mini-card" style="--m-color:var(--accent-cyan)">
+          <div class="mini-title">湿度 (直近30点)</div>
+          <div class="mini-val" id="miniHumidVal">---</div>
+          <div class="mini-wrap"><canvas id="mcHumid"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /right-col -->
+  </div><!-- /body-grid -->
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-left">
+      <div class="refresh-ring">
+        <svg width="34" height="34" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(80,120,255,0.08)" stroke-width="2.5"/>
+          <circle id="ringCircle" cx="18" cy="18" r="14" fill="none"
+            stroke="var(--accent-cyan)" stroke-width="2.5"
+            stroke-dasharray="87.96" stroke-dashoffset="0"
+            stroke-linecap="round"/>
+        </svg>
+        <span class="ring-label" id="ringLabel">60</span>
+      </div>
+      <div class="footer-time" id="footTime">最終更新 ---</div>
+    </div>
+    <a class="sheet-link" href="https://docs.google.com/spreadsheets/d/1fBLkhCdThAXbnHnr5ICaeIBT7WyoNh7KevnQLfpIVlA/edit" target="_blank">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+      スプレッドシートで見る
+    </a>
+  </footer>
+
+</div><!-- /page -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ── DATA ── */
+const SEED = [
+  {t:"16:09",p:1012.95,temp:28.1,h:52,pred:.744},{t:"15:59",p:1012.87,temp:27.9,h:52,pred:.744},
+  {t:"15:49",p:1012.84,temp:27.8,h:53,pred:.723},{t:"15:39",p:1012.78,temp:27.7,h:53,pred:.723},
+  {t:"15:29",p:1012.94,temp:27.6,h:53,pred:.752},{t:"15:19",p:1012.90,temp:27.6,h:53,pred:.752},
+  {t:"15:08",p:1012.85,temp:27.5,h:53,pred:.800},{t:"14:58",p:1012.81,temp:27.4,h:53,pred:.800},
+  {t:"14:48",p:1012.78,temp:27.2,h:54,pred:.831},{t:"14:38",p:1012.85,temp:27.1,h:54,pred:.831},
+  {t:"14:28",p:1012.85,temp:27.1,h:54,pred:.789},{t:"14:18",p:1012.86,temp:27.1,h:54,pred:.789},
+  {t:"14:08",p:1012.88,temp:27.0,h:54,pred:.733},{t:"13:58",p:1013.03,temp:26.8,h:55,pred:.733},
+  {t:"13:49",p:1012.99,temp:26.7,h:55,pred:.777},{t:"13:39",p:1012.95,temp:26.6,h:56,pred:.777},
+  {t:"13:29",p:1012.94,temp:26.5,h:56,pred:.750},{t:"13:19",p:1012.96,temp:26.5,h:56,pred:.750},
+  {t:"13:09",p:1013.13,temp:26.5,h:57,pred:.761},{t:"12:59",p:1013.09,temp:26.5,h:58,pred:.761},
+  {t:"12:49",p:1013.00,temp:26.4,h:58,pred:.704},{t:"12:39",p:1013.06,temp:26.3,h:59,pred:.704},
+  {t:"12:29",p:1013.20,temp:26.2,h:59,pred:.704},{t:"12:18",p:1013.13,temp:26.1,h:60,pred:.704},
+  {t:"11:58",p:1013.08,temp:25.9,h:61,pred:.723},{t:"11:48",p:1013.27,temp:25.9,h:61,pred:.513},
+  {t:"11:38",p:1013.39,temp:25.9,h:62,pred:.513},{t:"11:28",p:1013.60,temp:25.9,h:62,pred:.513},
+  {t:"11:18",p:1013.49,temp:25.9,h:62,pred:.513},{t:"11:08",p:1013.60,temp:26.0,h:63,pred:.526},
+  {t:"10:58",p:1013.54,temp:25.8,h:63,pred:.526},{t:"10:49",p:1013.66,temp:25.6,h:64,pred:.526},
+  {t:"10:39",p:1013.62,temp:25.5,h:64,pred:.526},{t:"10:29",p:1013.65,temp:25.4,h:65,pred:.521},
+  {t:"10:19",p:1013.49,temp:25.3,h:65,pred:.521},{t:"10:09",p:1013.37,temp:25.1,h:66,pred:.515},
+  {t:"09:59",p:1013.41,temp:24.8,h:66,pred:.515},{t:"09:49",p:1013.31,temp:24.6,h:66,pred:.550},
+  {t:"09:39",p:1013.03,temp:24.4,h:67,pred:.550},{t:"09:28",p:1012.86,temp:24.2,h:67,pred:.600},
+  {t:"09:18",p:1012.82,temp:23.9,h:67,pred:.600},{t:"09:08",p:1012.69,temp:23.7,h:67,pred:.875},
+  {t:"08:58",p:1012.51,temp:23.5,h:67,pred:.875},{t:"08:48",p:1012.27,temp:23.3,h:67,pred:.926},
+  {t:"08:38",p:1012.28,temp:23.1,h:67,pred:.926},{t:"08:28",p:1012.12,temp:23.0,h:66,pred:.979},
+  {t:"08:18",p:1012.05,temp:22.8,h:66,pred:.979},{t:"08:08",p:1011.86,temp:22.7,h:67,pred:1.018},
+  {t:"07:59",p:1011.69,temp:22.6,h:67,pred:1.018},{t:"07:49",p:1011.57,temp:22.6,h:67,pred:.973},
+  {t:"07:39",p:1011.59,temp:22.7,h:66,pred:.973},{t:"07:29",p:1011.44,temp:22.7,h:66,pred:.929},
+  {t:"07:19",p:1011.41,temp:22.7,h:66,pred:.929},{t:"07:09",p:1011.33,temp:22.6,h:67,pred:.897},
+  {t:"06:59",p:1011.29,temp:22.6,h:67,pred:.897},{t:"06:49",p:1011.05,temp:22.7,h:67,pred:.829},
+  {t:"06:38",p:1011.02,temp:22.8,h:67,pred:.829},{t:"06:28",p:1010.99,temp:22.9,h:66,pred:.880},
+  {t:"06:18",p:1010.78,temp:22.9,h:66,pred:.880},{t:"06:08",p:1010.57,temp:22.9,h:66,pred:.839},
+  {t:"05:58",p:1010.62,temp:23.0,h:66,pred:.839},{t:"05:48",p:1010.68,temp:23.0,h:66,pred:.766},
+  {t:"05:38",p:1010.27,temp:23.1,h:66,pred:.766},{t:"05:28",p:1010.14,temp:23.2,h:66,pred:.754},
+  {t:"05:18",p:1010.23,temp:23.3,h:66,pred:.754},{t:"05:09",p:1010.17,temp:23.4,h:66,pred:.887},
+  {t:"04:59",p:1010.00,temp:23.4,h:66,pred:.887},{t:"04:49",p:1010.01,temp:23.5,h:66,pred:.887},
+  {t:"04:39",p:1010.09,temp:23.6,h:66,pred:.887},{t:"04:29",p:1009.92,temp:23.7,h:66,pred:.887},
+  {t:"04:19",p:1009.93,temp:23.8,h:66,pred:.887},{t:"04:09",p:1010.16,temp:23.8,h:66,pred:.887},
+  {t:"03:59",p:1010.10,temp:24.0,h:65,pred:.887}
+];
+
+const LVL = [
+  {max:.32,  lb:'通常',     bg:'rgba(0,229,160,.12)',  fg:'#00e5a0',bar:'#00e5a0',glow:'rgba(0,229,160,.3)',  grad:'linear-gradient(135deg,#00e5a0,#00d4ff)',pct:5},
+  {max:1.4,  lb:'やや注意', bg:'rgba(93,232,122,.12)', fg:'#5de87a',bar:'#5de87a',glow:'rgba(93,232,122,.3)', grad:'linear-gradient(135deg,#5de87a,#00d4ff)',pct:28},
+  {max:2.96, lb:'注意',     bg:'rgba(255,184,48,.12)', fg:'#ffb830',bar:'#ffb830',glow:'rgba(255,184,48,.3)', grad:'linear-gradient(135deg,#ffb830,#ff8c42)',pct:55},
+  {max:3.8,  lb:'警戒',     bg:'rgba(255,100,56,.12)', fg:'#ff6438',bar:'#ff6438',glow:'rgba(255,100,56,.3)', grad:'linear-gradient(135deg,#ff6438,#ff4560)',pct:76},
+  {max:1e9,  lb:'超警戒',   bg:'rgba(255,69,96,.15)',  fg:'#ff4560',bar:'#ff4560',glow:'rgba(255,69,96,.35)', grad:'linear-gradient(135deg,#ff4560,#ff0080)',pct:96}
+];
+const getLv = v => LVL.find(l => v < l.max) || LVL[4];
+
+let liveData    = [...SEED].reverse();
+let currentMode = 'press';
+let mainChart   = null;
+let miniCharts  = {};
+let countdown   = 60;
+let prevPred    = null;
+const REFRESH   = 60;
+const RING_C    = 87.96;
+
+function nextPoint(last) {
+  const now = new Date();
+  const t = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const p    = Math.round((last.p    + (Math.random()-.5)*.30) * 100) / 100;
+  const temp = Math.round((last.temp + (Math.random()-.5)*.20) *  10) /  10;
+  const h    = Math.min(100, Math.max(0, last.h + Math.round((Math.random()-.5)*2)));
+  const rp   = liveData.slice(-6).map(r => r.p);
+  const ac   = rp.length > 1 ? Math.abs(rp.at(-1)-rp[0])/rp.length : 0;
+  const pred = Math.round(Math.max(0.05, Math.min(5, last.pred+(Math.random()-.5)*.08-ac*.2))*1000)/1000;
+  return { t, p, temp, h, pred };
+}
+
+function render(flash) {
+  const d  = liveData.at(-1);
+  const lv = getLv(d.pred);
+
+  if (flash) { document.body.classList.add('flash'); setTimeout(()=>document.body.classList.remove('flash'),400); }
+
+  const rc = document.getElementById('riskCard');
+  rc.style.setProperty('--card-accent',    lv.grad);
+  rc.style.setProperty('--risk-gradient',  lv.grad);
+  rc.style.setProperty('--risk-bar',       lv.bar);
+  rc.style.setProperty('--risk-glow',      lv.glow);
+
+  const pill = document.getElementById('riskPill');
+  pill.textContent = lv.lb;
+  pill.style.background   = lv.bg;
+  pill.style.color        = lv.fg;
+  pill.style.borderColor  = lv.fg;
+
+  document.getElementById('riskScore').textContent    = d.pred.toFixed(3);
+  document.getElementById('progressFill').style.width = lv.pct + '%';
+
+  const icon = document.getElementById('trendIcon');
+  const txt  = document.getElementById('trendText');
+  if (prevPred !== null) {
+    const diff = d.pred - prevPred;
+    if (Math.abs(diff) < .005) {
+      icon.innerHTML = '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>';
+      icon.style.color = 'var(--text-dim)'; txt.textContent = '安定';
+    } else if (diff > 0) {
+      icon.innerHTML = '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>';
+      icon.style.color = '#ff6438'; txt.textContent = '上昇中 +' + diff.toFixed(3);
+    } else {
+      icon.innerHTML = '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>';
+      icon.style.color = '#00e5a0'; txt.textContent = '低下中 ' + diff.toFixed(3);
+    }
+  }
+  prevPred = d.pred;
+
+  document.getElementById('mPress').textContent = d.p.toFixed(2);
+  document.getElementById('mTemp').textContent  = d.temp.toFixed(1);
+  document.getElementById('mHumid').textContent = d.h;
+
+  const pa = liveData.map(r=>r.p);
+  const mx = Math.max(...pa), mn = Math.min(...pa), rng = mx-mn;
+  document.getElementById('sMax').textContent   = mx.toFixed(2) + ' hPa';
+  document.getElementById('sMin').textContent   = mn.toFixed(2) + ' hPa';
+  document.getElementById('sRange').textContent = rng.toFixed(2) + ' hPa';
+
+  const as = document.getElementById('alertStrip');
+  if (rng > 3.5 || d.pred > 1.4) {
+    as.classList.add('visible');
+    document.getElementById('alertText').textContent = d.pred >= 2.96
+      ? '頭痛リスクが高まっています。水分補給・休養をおすすめします。'
+      : '気圧変動が検出されました。体調の変化にご注意ください。';
+  } else { as.classList.remove('visible'); }
+
+  document.getElementById('footTime').textContent    = '最終更新 ' + d.t;
+  document.getElementById('miniPressVal').textContent = d.p.toFixed(2)    + ' hPa';
+  document.getElementById('miniTempVal').textContent  = d.temp.toFixed(1)  + ' ℃';
+  document.getElementById('miniHumidVal').textContent = d.h + ' %';
+
+  buildMainChart(currentMode);
+  buildMiniCharts();
+}
+
+const MODES = {
+  press: {key:'p',    color:'#4a8fff',fill:'rgba(74,143,255,.13)', ttl:'気圧の推移',         unit:'hPa',dec:2},
+  pred:  {key:'pred', color:'#00e5a0',fill:'rgba(0,229,160,.13)',  ttl:'頭痛予測スコアの推移', unit:'',  dec:3},
+  temp:  {key:'temp', color:'#ff8c42',fill:'rgba(255,140,66,.13)', ttl:'温度の推移',           unit:'℃', dec:1},
+  humid: {key:'h',    color:'#a78bfa',fill:'rgba(167,139,250,.13)',ttl:'湿度の推移',           unit:'%', dec:0}
+};
+
+const MONO = {family:"'Space Mono',monospace"};
+// Brighter axis tick color and grid color for legibility
+const GC = 'rgba(80,120,255,0.10)';
+const TC = 'rgba(180,210,255,0.70)'; // much brighter tick labels
+
+function buildMainChart(mode) {
+  const cfg  = MODES[mode];
+  const vals = liveData.map(r=>r[cfg.key]);
+  const lbls = liveData.map(r=>r.t);
+  const mn   = Math.min(...vals), mxv = Math.max(...vals);
+  const pad  = Math.max((mxv-mn)*.18,.05);
+
+  document.getElementById('chartTtl').textContent   = cfg.ttl;
+  document.getElementById('chartRange').textContent = mn.toFixed(cfg.dec) + ' – ' + mxv.toFixed(cfg.dec) + (cfg.unit?' '+cfg.unit:'');
+
+  if (mainChart) mainChart.destroy();
+  mainChart = new Chart(document.getElementById('mc'), {
+    type: 'line',
+    data: {
+      labels: lbls,
+      datasets: [{
+        data: vals,
+        borderColor: cfg.color,
+        backgroundColor: cfg.fill,
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: cfg.color,
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+        fill: true,
+        tension: 0.38
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {duration: 250},
+      interaction: {mode: 'index', intersect: false},
+      plugins: {
+        legend: {display: false},
+        tooltip: {
+          backgroundColor: 'rgba(8,12,26,0.97)',
+          borderColor: cfg.color,
+          borderWidth: 1.5,
+          titleColor: 'rgba(190,215,255,0.85)',
+          bodyColor: cfg.color,
+          padding: 12,
+          caretSize: 6,
+          cornerRadius: 8,
+          titleFont: {...MONO, size: 11},
+          bodyFont: {...MONO, size: 15, weight: '700'},
+          callbacks: {
+            title: items => items[0].label,
+            label: c => {
+              const val = c.parsed.y.toFixed(cfg.dec);
+              return '  ' + val + (cfg.unit ? ' ' + cfg.unit : '');
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: mn - pad,
+          max: mxv + pad,
+          ticks: {
+            color: TC,
+            font: {...MONO, size: 11},
+            maxTicksLimit: 7,
+            padding: 8,
+            callback: v => v.toFixed(cfg.dec) + (cfg.unit ? ' ' + cfg.unit : '')
+          },
+          grid: {color: GC, lineWidth: 1},
+          border: {color: 'transparent', dash: [4, 4]}
+        },
+        x: {
+          ticks: {
+            color: TC,
+            font: {...MONO, size: 10},
+            maxRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 10,
+            padding: 6
+          },
+          grid: {color: GC, lineWidth: 1},
+          border: {color: 'transparent'}
+        }
+      }
+    }
+  });
+}
+
+function buildMiniCharts() {
+  const last = liveData.slice(-30);
+  const lbls = last.map(r=>r.t);
+  const defs = [
+    {id:'mcPress',key:'p',    color:'#4a8fff',fill:'rgba(74,143,255,.15)', unit:'hPa', dec:2},
+    {id:'mcTemp', key:'temp', color:'#ff8c42',fill:'rgba(255,140,66,.15)',  unit:'℃',  dec:1},
+    {id:'mcHumid',key:'h',    color:'#00d4ff',fill:'rgba(0,212,255,.15)',   unit:'%',  dec:0}
+  ];
+  defs.forEach(m => {
+    if (miniCharts[m.id]) miniCharts[m.id].destroy();
+    miniCharts[m.id] = new Chart(document.getElementById(m.id), {
+      type:'line',
+      data:{
+        labels: lbls,
+        datasets:[{
+          data: last.map(r=>r[m.key]),
+          borderColor: m.color,
+          backgroundColor: m.fill,
+          fill: true,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: m.color,
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 1.5,
+          tension: 0.4,
+          borderWidth: 2
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:{duration:200},
+        interaction:{mode:'index', intersect:false},
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            enabled: true,
+            backgroundColor: 'rgba(8,12,26,0.97)',
+            borderColor: m.color,
+            borderWidth: 1,
+            titleColor: 'rgba(190,215,255,0.80)',
+            bodyColor: m.color,
+            padding: 8,
+            cornerRadius: 6,
+            titleFont: {family:"'Space Mono',monospace", size:10},
+            bodyFont: {family:"'Space Mono',monospace", size:13, weight:'700'},
+            callbacks:{
+              title: items => items[0].label,
+              label: c => '  ' + c.parsed.y.toFixed(m.dec) + ' ' + m.unit
+            }
+          }
+        },
+        scales:{y:{display:false},x:{display:false}}
+      }
+    });
+  });
+}
+
+const MODE_KEYS = ['press','pred','temp','humid'];
+let rotateIndex = 0;
+let rotateTick  = 15;
+let rotateActive = true;
+const ROTATE_INTERVAL = 15; // seconds per chart
+
+function switchToMode(mode, fromUser) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+  const btn = document.querySelector(`.tab-btn[data-mode="${mode}"]`);
+  if (btn) btn.classList.add('on');
+  currentMode = mode;
+  buildMainChart(mode);
+  if (fromUser) {
+    // reset rotation countdown
+    rotateIndex = MODE_KEYS.indexOf(mode);
+    rotateTick  = ROTATE_INTERVAL;
+    updateRotateBadge();
+  }
+}
+
+function updateRotateBadge() {
+  const badge = document.getElementById('autoRotateBadge');
+  const cd    = document.getElementById('rotateCountdown');
+  if (!rotateActive) {
+    badge.classList.add('paused');
+    cd.textContent = '--';
+  } else {
+    badge.classList.remove('paused');
+    cd.textContent = rotateTick;
+  }
+}
+
+document.getElementById('tabRow').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (btn) {
+    switchToMode(btn.dataset.mode, true);
+    return;
+  }
+  // Toggle auto-rotate on badge click
+  if (e.target.closest('#autoRotateBadge')) {
+    rotateActive = !rotateActive;
+    if (rotateActive) rotateTick = ROTATE_INTERVAL;
+    updateRotateBadge();
+  }
+});
+
+// Rotation tick (called every second from main tick)
+function tickRotate() {
+  if (!rotateActive) return;
+  rotateTick--;
+  if (rotateTick <= 0) {
+    rotateIndex = (rotateIndex + 1) % MODE_KEYS.length;
+    switchToMode(MODE_KEYS[rotateIndex], false);
+    rotateTick = ROTATE_INTERVAL;
+  }
+  updateRotateBadge();
+}
+
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clockTime').textContent =
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('clockDate').textContent =
+    n.getFullYear()+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+String(n.getDate()).padStart(2,'0');
+}
+
+function updateRing(sec) {
+  document.getElementById('ringCircle').style.strokeDashoffset = RING_C*(1-sec/REFRESH);
+  document.getElementById('ringLabel').textContent = sec;
+}
+
+function tick() {
+  countdown--;
+  updateClock();
+  updateRing(countdown);
+  tickRotate();
+  if (countdown <= 0) {
+    countdown = REFRESH;
+    liveData.push(nextPoint(liveData.at(-1)));
+    if (liveData.length > 80) liveData.shift();
+    render(true);
+  }
+}
+
+updateClock();
+updateRing(countdown);
+render(false);
+updateRotateBadge();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
