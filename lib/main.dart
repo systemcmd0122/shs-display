@@ -33,6 +33,15 @@ void main() {
       ..height = '100%',
   );
 
+  ui_web.platformViewRegistry.registerViewFactory(
+    'barometric-view',
+    (int viewId) => html.IFrameElement()
+      ..src = 'barometric.html?hideHeader=true'
+      ..style.border = 'none'
+      ..width = '100%'
+      ..height = '100%',
+  );
+
   runApp(MaterialApp(
     title: '佐土原高校 デジタルサイネージ',
     debugShowCheckedModeBanner: false,
@@ -68,12 +77,21 @@ class SchoolBoard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 12),
-                // 中央: カレンダーと時刻表
+                // 中央: 頭痛予報、カレンダー、時刻表
                 Expanded(
                   child: Row(
                     children: [
                       Expanded(
-                        flex: 6,
+                        flex: 3,
+                        child: PanelContainer(
+                          title: "頭痛予報",
+                          icon: Icons.speed,
+                          child: HeadacheForecastView(),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        flex: 4,
                         child: PanelContainer(
                           title: "学校行事予定",
                           icon: Icons.calendar_month,
@@ -82,7 +100,7 @@ class SchoolBoard extends StatelessWidget {
                       ),
                       SizedBox(width: 12),
                       Expanded(
-                        flex: 4,
+                        flex: 3,
                         child: PanelContainer(
                           title: "交通機関時刻表",
                           icon: Icons.directions_bus,
@@ -231,17 +249,43 @@ class Information extends StatefulWidget {
 class _InformationState extends State<Information> {
   String newsMessage = "お知らせを読み込み中...";
   Timer? _timer;
+  final ScrollController _scrollController = ScrollController();
+  Timer? _scrollTimer;
 
   @override
   void initState() {
     super.initState();
     fetchNews();
     _timer = Timer.periodic(Duration(minutes: 5), (timer) => fetchNews());
+    _startScrolling();
+  }
+
+  void _startScrolling() {
+    _scrollTimer?.cancel();
+    _scrollTimer = Timer.periodic(Duration(milliseconds: 50), (timer) {
+      if (_scrollController.hasClients) {
+        double maxScroll = _scrollController.position.maxScrollExtent;
+        double currentScroll = _scrollController.position.pixels;
+        if (maxScroll > 0) {
+          if (currentScroll >= maxScroll) {
+            _scrollController.jumpTo(0);
+          } else {
+            _scrollController.animateTo(
+              currentScroll + 1,
+              duration: Duration(milliseconds: 50),
+              curve: Curves.linear,
+            );
+          }
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _scrollTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -271,13 +315,29 @@ class _InformationState extends State<Information> {
 
   @override
   Widget build(BuildContext context) {
+    double fontSize = 32;
+    if (newsMessage.length > 300) {
+      fontSize = 20;
+    } else if (newsMessage.length > 150) {
+      fontSize = 24;
+    } else if (newsMessage.length > 50) {
+      fontSize = 28;
+    }
+
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(12),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      alignment: Alignment.centerLeft,
       child: SingleChildScrollView(
+        controller: _scrollController,
         child: Text(
           newsMessage,
-          style: TextStyle(color: Colors.white, fontSize: 20, height: 1.4),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: fontSize,
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -420,6 +480,13 @@ class GoogleCalendarView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return HtmlElementView(viewType: 'calendar-view');
+  }
+}
+
+class HeadacheForecastView extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HtmlElementView(viewType: 'barometric-view');
   }
 }
 
