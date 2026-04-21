@@ -137,6 +137,16 @@ body::after {
   align-items: start;
   flex: 1;
 }
+body.compact .body-grid {
+  grid-template-columns: 1fr;
+}
+body.compact .right-col,
+body.compact .footer {
+  display: none !important;
+}
+body.compact .page {
+  padding-bottom: var(--page-pad);
+}
 .left-col  { display: flex; flex-direction: column; gap: var(--gap); }
 .right-col { display: flex; flex-direction: column; gap: var(--gap); }
 
@@ -645,13 +655,16 @@ body::after {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-// URLパラメータでヘッダーを非表示にする
+// URLパラメータで表示を調整
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('hideHeader') === 'true') {
   const header = document.querySelector('.header');
   if (header) header.style.display = 'none';
   const page = document.querySelector('.page');
   if (page) page.style.paddingTop = '0';
+}
+if (urlParams.get('compact') === 'true') {
+  document.body.classList.add('compact');
 }
 
 /* ── DATA ── */

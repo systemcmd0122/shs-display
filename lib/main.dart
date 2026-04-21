@@ -36,7 +36,7 @@ void main() {
   ui_web.platformViewRegistry.registerViewFactory(
     'barometric-view',
     (int viewId) => html.IFrameElement()
-      ..src = 'barometric.html?hideHeader=true'
+      ..src = 'barometric.html?hideHeader=true&compact=true'
       ..style.border = 'none'
       ..width = '100%'
       ..height = '100%',
@@ -67,7 +67,7 @@ class SchoolBoard extends StatelessWidget {
               children: [
                 // 上部: 時計と天気
                 Container(
-                  height: constraints.maxHeight * 0.25,
+                  height: constraints.maxHeight * 0.20,
                   child: Row(
                     children: [
                       Expanded(flex: 4, child: DigitalClock()),
@@ -82,7 +82,7 @@ class SchoolBoard extends StatelessWidget {
                   child: Row(
                     children: [
                       Expanded(
-                        flex: 3,
+                        flex: 4,
                         child: PanelContainer(
                           title: "頭痛予報",
                           icon: Icons.speed,
@@ -91,7 +91,7 @@ class SchoolBoard extends StatelessWidget {
                       ),
                       SizedBox(width: 12),
                       Expanded(
-                        flex: 4,
+                        flex: 2,
                         child: PanelContainer(
                           title: "学校行事予定",
                           icon: Icons.calendar_month,
@@ -100,7 +100,7 @@ class SchoolBoard extends StatelessWidget {
                       ),
                       SizedBox(width: 12),
                       Expanded(
-                        flex: 3,
+                        flex: 4,
                         child: PanelContainer(
                           title: "交通機関時刻表",
                           icon: Icons.directions_bus,
@@ -113,7 +113,7 @@ class SchoolBoard extends StatelessWidget {
                 SizedBox(height: 12),
                 // 下部: お知らせ
                 Container(
-                  height: constraints.maxHeight * 0.15,
+                  height: constraints.maxHeight * 0.22,
                   child: PanelContainer(
                     title: "お知らせ",
                     icon: Icons.campaign,
