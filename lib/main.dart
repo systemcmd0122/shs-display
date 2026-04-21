@@ -1,16 +1,47 @@
-import 'dart:ui_web' as ui_web; // Web用の新しいライブラリ
+import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html; // Web用（これを動かすにはWebで実行する必要があります）
+import 'dart:html' as html;
 import 'package:http/http.dart' as http;
 import 'package:csv/csv.dart';
 import 'dart:async';
 import 'dart:convert';
 
 void main() {
+  // カレンダーのビューを一度だけ登録
+  final String calendarId1 = "c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com";
+  final String calendarId2 = "c_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com&ctz=Asia%2FTokyo";
+  final String combinedUrl =
+      "https://calendar.google.com/calendar/embed"
+      "?src=$calendarId1"
+      "&src=$calendarId2"
+      "&ctz=Asia%2FTokyo"
+      "&showTitle=0"
+      "&showNav=1"
+      "&showDate=1"
+      "&showPrint=0"
+      "&showTabs=0"
+      "&mode=AGENDA"
+      "&bgcolor=%23ffffff";
+
+  ui_web.platformViewRegistry.registerViewFactory(
+    'calendar-view',
+    (int viewId) => html.IFrameElement()
+      ..src = combinedUrl
+      ..style.border = 'none'
+      ..width = '100%'
+      ..height = '100%',
+  );
 
   runApp(MaterialApp(
-    theme: ThemeData.dark(),
+    title: '佐土原高校 デジタルサイネージ',
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: Colors.blueGrey[900],
+      scaffoldBackgroundColor: Colors.black,
+      fontFamily: 'Roboto',
+    ),
     home: SchoolBoard(),
   ));
 }
@@ -19,66 +50,124 @@ class SchoolBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Row(
-        children: [
-          // 上半分
-          Expanded(
-            flex: 3, //少し大きめに確保
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Padding(
+            padding: const EdgeInsets.all(12.0),
             child: Column(
               children: [
-
-                // 左上：天気
-                Expanded( flex: 7,child: _buildPanel(child: WeatherPanel())),
-                // 右上：時刻表
-                Expanded( flex: 3,child: _buildPanel(child: TripleTimetable())),
+                // 上部: 時計と天気
+                Container(
+                  height: constraints.maxHeight * 0.25,
+                  child: Row(
+                    children: [
+                      Expanded(flex: 4, child: DigitalClock()),
+                      VerticalDivider(color: Colors.white24, width: 32),
+                      Expanded(flex: 6, child: WeatherPanel()),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12),
+                // 中央: カレンダーと時刻表
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 6,
+                        child: PanelContainer(
+                          title: "学校行事予定",
+                          icon: Icons.calendar_month,
+                          child: GoogleCalendarView(),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        flex: 4,
+                        child: PanelContainer(
+                          title: "交通機関時刻表",
+                          icon: Icons.directions_bus,
+                          child: TripleTimetable(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12),
+                // 下部: お知らせ
+                Container(
+                  height: constraints.maxHeight * 0.15,
+                  child: PanelContainer(
+                    title: "お知らせ",
+                    icon: Icons.campaign,
+                    headerColor: Colors.orange[800]!,
+                    child: Information(),
+                  ),
+                ),
               ],
             ),
-          ),
-          // 下半分
-          Expanded(
-            flex: 4, // 少し小さめに確保
-            child: Column(
-              children: [
-                // 左下：時刻表
-                Expanded( flex: 7,child: _buildPanel(child: GoogleCalendarView())),
-                // 右下：現在時刻
-                Expanded( flex: 3,child: _buildPanel(child: DigitalClock())),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 3, // 少し小さめに確保
-            child: Row(
-              children: [
-                // 右下：現在時刻
-                Expanded(child: _buildPanel(child: Information())),
-              ],
-            ),
-          ),
-        ],
-      ),
-
-    );
-  }
-
-  // パネルの枠組みを作る共通関数
-  Widget _buildPanel({String? title, Widget? child}) {
-    return Container(
-      margin: EdgeInsets.all(8.0),
-      decoration: BoxDecoration(
-        color: Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: child ?? Center(
-        child: Text(title ?? "", style: TextStyle(color: Colors.white, fontSize: 24)),
+          );
+        },
       ),
     );
   }
 }
 
-// 右下：現在時刻を表示する時計ウィジェット
+class PanelContainer extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final IconData icon;
+  final Color? headerColor;
+
+  const PanelContainer({
+    required this.title,
+    required this.child,
+    required this.icon,
+    this.headerColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: headerColor ?? Colors.blueGrey[800],
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+}
+
 class DigitalClock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -86,15 +175,48 @@ class DigitalClock extends StatelessWidget {
       stream: Stream.periodic(Duration(seconds: 1)),
       builder: (context, snapshot) {
         final now = DateTime.now();
-        final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}";
-        final dateStr = "${now.year}年${now.month}月${now.day}日";
+        final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+        final secondStr = now.second.toString().padLeft(2, '0');
+        final dateStr = "${now.year}年 ${now.month}月 ${now.day}日";
+        final weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+        final weekDayStr = "（${weekDays[now.weekday % 7]}）";
 
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(timeStr, style: TextStyle(fontSize: 80, fontWeight: FontWeight.bold, color: Colors.cyanAccent, fontFamily: 'monospace')),
-            Text(dateStr, style: TextStyle(fontSize: 30, color: Colors.white70)),
-          ],
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                dateStr + weekDayStr,
+                style: TextStyle(fontSize: 24, color: Colors.white70),
+              ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    timeStr,
+                    style: TextStyle(
+                      fontSize: 100,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.cyanAccent,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    secondStr,
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.cyanAccent.withOpacity(0.7),
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -108,77 +230,59 @@ class Information extends StatefulWidget {
 
 class _InformationState extends State<Information> {
   String newsMessage = "お知らせを読み込み中...";
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     fetchNews();
-    // 5分ごとにお知らせを更新するタイマー
-    Timer.periodic(Duration(minutes: 5), (timer) => fetchNews());
+    _timer = Timer.periodic(Duration(minutes: 5), (timer) => fetchNews());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> fetchNews() async {
     const String gasUrl = "https://script.google.com/a/macros/g.miyazaki-c.ed.jp/s/AKfycbx73zYIPvjer7PG2vDc3LU46anf52pc0alkJY9p5bhMkK6963LaAO_2FDrV-wOHv-Kg/exec";
     try {
-      final response = await http.get(Uri.parse(gasUrl));
+      final response = await http.get(Uri.parse(gasUrl)).timeout(Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        setState(() {
-          newsMessage = data['message'];
-        });
+        if (mounted) {
+          setState(() {
+            newsMessage = data['message'] ?? "お知らせはありません。";
+          });
+        }
       }
     } catch (e) {
       print("お知らせ取得エラー: $e");
+      if (mounted) {
+        setState(() {
+          if (newsMessage == "お知らせを読み込み中...") {
+            newsMessage = "お知らせを取得できませんでした。";
+          }
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width*3/10;
-    // 横幅に合わせてフォントサイズを計算（例：横幅の 5%）
-    double FontSize = screenWidth * 0.05;
-    return Row(
-      children: [
-        // スプレッドシートからのお知らせ
-        Expanded(
-          flex: 1,
-          child: Container(
-            margin: EdgeInsets.all(8),
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.yellowAccent.withOpacity(0.2), // お知らせっぽく少し赤系に
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.yellowAccent.withOpacity(0.5)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.campaign, color: Colors.redAccent, size: 20),
-                    SizedBox(width: 8),
-                    Text("お知らせ", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold,fontSize: FontSize)),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Expanded(
-                  child: Text(
-                    newsMessage,
-                    style: TextStyle(color: Colors.white, fontSize: FontSize),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 10,
-                  ),
-                ),
-              ],
-            ),
-          ),
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(12),
+      child: SingleChildScrollView(
+        child: Text(
+          newsMessage,
+          style: TextStyle(color: Colors.white, fontSize: 20, height: 1.4),
         ),
-      ],
+      ),
     );
   }
 }
-
-
 
 class WeatherPanel extends StatefulWidget {
   @override
@@ -186,266 +290,165 @@ class WeatherPanel extends StatefulWidget {
 }
 
 class _WeatherPanelState extends State<WeatherPanel> {
-  String temp = "--";
-  String humidity = "--";
-  String desc = "待機中";
-  String iconUrl = "";
+  Map<String, dynamic>? today;
+  Map<String, dynamic>? tomorrow;
   String errorMsg = "";
-
-  String todayCode = "100";
-  String tomorrowCode = "100";
-
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     fetchWeather();
+    _timer = Timer.periodic(Duration(hours: 1), (timer) => fetchWeather());
   }
-  String tomorrowDesc = "取得中";
-  String tomorrowHigh = "--";
-  String tomorrowLow = "--";
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   Future<void> fetchWeather() async {
-    // あなたのGASのURLに書き換えてください
     const String gasUrl = "https://script.google.com/macros/s/AKfycbySkWR4QxPsT7elLSs4-41tTOc1_VbsUjA1xjPVMpMdzaAWUqUTOMdDA7WuhySqwF74/exec";
     try {
-      final response = await http.get(Uri.parse(gasUrl));
+      final response = await http.get(Uri.parse(gasUrl)).timeout(Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-
-        setState(() {
-          // 今日のデータ
-          desc = data['today']['desc'];
-          todayCode = data['today']['code'];
-          temp = data['today']['high']; // 今日の最高気温
-
-          // 明日のデータ
-          tomorrowDesc = data['tomorrow']['desc'];
-          tomorrowCode = data['tomorrow']['code'];
-          tomorrowHigh = data['tomorrow']['high'];
-          tomorrowLow = data['tomorrow']['low'];
-          errorMsg = "";
-        });
+        if (mounted) {
+          setState(() {
+            today = data['today'];
+            tomorrow = data['tomorrow'];
+            errorMsg = "";
+          });
+        }
+      } else {
+        throw Exception("Status code: ${response.statusCode}");
       }
     } catch (e) {
-      setState(() => errorMsg = "予報取得エラー");
+      print("天気取得エラー: $e");
+      if (mounted) {
+        setState(() => errorMsg = "天気予報の取得に失敗しました");
+      }
     }
   }
 
-
+  @override
   Widget build(BuildContext context) {
-    if (errorMsg.isNotEmpty) return Center(child: Text(errorMsg, style: TextStyle(color: Colors.red)));
-    // 画面の横幅を取得
-    double screenWidth = MediaQuery.of(context).size.width*3/10;
+    if (errorMsg.isNotEmpty && today == null) {
+      return Center(child: Text(errorMsg, style: TextStyle(color: Colors.redAccent)));
+    }
+    if (today == null) {
+      return Center(child: CircularProgressIndicator());
+    }
 
-    // 横幅に合わせてフォントサイズを計算（例：横幅の 5%）
-    double titleFontSize = screenWidth * 0.05;
-    double tempFontSize = screenWidth * 0.07;  // 気温は大きく
-    double descFontSize = screenWidth * 0.04;
-    double decWidth = screenWidth * 0.5;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildWeatherColumn("今日", today!),
+        VerticalDivider(color: Colors.white10, indent: 20, endIndent: 20),
+        _buildWeatherColumn("明日", tomorrow!),
+      ],
+    );
+  }
 
-    return Container(
-      padding: EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.black45,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("宮崎市の天気予報", style: TextStyle(color: Colors.cyanAccent, fontSize: titleFontSize, fontWeight: FontWeight.bold)),
-          SizedBox(height: 10),
+  Widget _buildWeatherColumn(String label, Map<String, dynamic> data) {
+    String code = data['code'] ?? "100";
+    String displayCode = _convertWeatherCode(code);
 
-          // --- 今日の予報セクション ---
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Column(
-                children: [
-                  Text("今日", style: TextStyle(color: Colors.white70, fontSize: descFontSize)),
-                  _getWeatherIcon(todayCode), // アイコン
-                  SizedBox(width: decWidth, child: Text(desc, style: TextStyle(color: Colors.white, fontSize: descFontSize), textAlign: TextAlign.center, maxLines: 5)),
+    return Expanded(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(label, style: TextStyle(fontSize: 18, color: Colors.white70)),
+            Image.network(
+              'https://www.jma.go.jp/bosai/forecast/img/$displayCode.png',
+              width: 80,
+              height: 80,
+              errorBuilder: (context, error, stackTrace) => Icon(Icons.wb_cloudy, size: 64),
+            ),
+            Text(
+              data['desc'] ?? "",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (data['high'] != null && data['high'] != "--")
+                  Text("${data['high']}°", style: TextStyle(fontSize: 24, color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
+                if (data['low'] != null && data['low'] != "--") ...[
+                  SizedBox(width: 8),
+                  Text("${data['low']}°", style: TextStyle(fontSize: 24, color: Colors.blueAccent, fontWeight: FontWeight.bold)),
                 ],
-              ),
-              Column(
-                children: [
-                  Text("最高気温", style: TextStyle(color: Colors.white70, fontSize: descFontSize)),
-                  Text("$temp℃", style: TextStyle(color: Colors.orangeAccent, fontSize: tempFontSize, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ],
-          ),
-
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5),
-            child: Divider(color: Colors.white24, thickness: 1),
-          ),
-
-          // --- 明日の予報セクション ---
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Column(
-                children: [
-                  Text("明日", style: TextStyle(color: Colors.white70, fontSize: descFontSize)),
-                  _getWeatherIcon(tomorrowCode), // 明日のアイコン（変数名は適宜合わせてください）
-                  SizedBox(width: decWidth, child: Text(tomorrowDesc, style: TextStyle(color: Colors.white, fontSize: descFontSize), textAlign: TextAlign.center, maxLines: 5)),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text("最高 ", style: TextStyle(color: Colors.white70, fontSize: descFontSize)),
-                      Text("$tomorrowHigh℃", style: TextStyle(color: Colors.orangeAccent, fontSize: descFontSize, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text("最低 ", style: TextStyle(color: Colors.white70, fontSize: descFontSize)),
-                      Text("$tomorrowLow℃", style: TextStyle(color: Colors.blueAccent, fontSize: descFontSize, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-
-
-// 3. アイコン表示関数を書き換え
-  Widget _getWeatherIcon(String code) {
-    print("code:$code");
-    print("desc:$desc");
-    String displayCode = code;
-    if (code.length == 3) {
-      // 例: 211 -> 200番台なので「くもり」の基本画像を表示させる
-      // もしくは気象庁のルールに基づき特定のコードへ変換
-
-
-      if ( code == "103" || code == "106"|| code == "107"|| code == "108"|| code == "120"|| code == "121" || code == "140") displayCode = "102";
-      if ( code == "105"|| code == "160"|| code == "170" ) displayCode = "104";
-      if ( code == "111" ) displayCode = "110";
-      if ( code == "113" || code == "114" || code == "118"|| code == "119"|| code == "125" || code == "126"|| code == "127"|| code == "128") displayCode = "112";
-      if ( code == "116" || code == "117" || code == "181" ) displayCode = "115";
-      if ( code == "123" || code == "124"|| code == "130"|| code == "131") displayCode = "100";
-      if ( code == "132" ) displayCode = "101";
-      if ( code == "209" || code == "231" ) displayCode = "200";
-      if ( code == "223" ) displayCode = "201";
-      if ( code == "203" || code == "206" || code == "207"|| code == "208" || code == "220"|| code == "221"|| code == "240") displayCode = "202";
-      if ( code == "205" || code == "250"|| code == "260"|| code == "270") displayCode = "204";
-      if (code == "211")displayCode = "210";
-      if ( code == "214" || code == "213" || code == "218"|| code == "219"|| code == "222"|| code == "224"|| code == "225"|| code == "226") displayCode = "212";
-      if (code == "216"|| code == "217"|| code == "228"|| code == "229"|| code == "230"|| code == "281")displayCode = "215";
-      if (code == "304"|| code == "306"|| code == "328"|| code == "329"|| code == "350")displayCode = "300";
-      if (code == "309"|| code == "322" ) displayCode = "303";
-      if ( code == "316" || code == "320" || code == "323"|| code == "324"|| code == "325") displayCode = "311";
-      if ( code == "317" || code == "321" ) displayCode = "313";
-      if ( code == "315"  || code == "326" || code == "327") displayCode = "314";
-    }
-
-    double screenWidth = MediaQuery.of(context).size.width*3/10;
-    // 横幅に合わせてフォントサイズを計算（例：横幅の 5%）
-    double IconSize = screenWidth * 0.20;
-
-  return Image.network(
-  'https://www.jma.go.jp/bosai/forecast/img/$displayCode.png',
-  width: IconSize,
-  height: IconSize,
-    errorBuilder: (context, error, stackTrace) {
-      // それでもエラーなら、もっとも近い基本コードを試す
-      return Image.network(
-        'https://www.jma.go.jp/bosai/forecast/img/${code[0]}00.png',
-        width: 64,
-        height: 64,
-        errorBuilder: (c, e, s) => Icon(Icons.wb_cloudy, color: Colors.white, size: 64),
-      );
-    },
-  );
+  String _convertWeatherCode(String code) {
+    if (code.length != 3) return code;
+    // 既存のロジックを流用（簡略化も可能だが互換性を重視）
+    if (["103", "106", "107", "108", "120", "121", "140"].contains(code)) return "102";
+    if (["105", "160", "170"].contains(code)) return "104";
+    if (code == "111") return "110";
+    if (["113", "114", "118", "119", "125", "126", "127", "128"].contains(code)) return "112";
+    if (["116", "117", "181"].contains(code)) return "115";
+    if (["123", "124", "130", "131"].contains(code)) return "100";
+    if (code == "132") return "101";
+    if (["209", "231"].contains(code)) return "200";
+    if (code == "223") return "201";
+    if (["203", "206", "207", "208", "220", "221", "240"].contains(code)) return "202";
+    if (["205", "250", "260", "270"].contains(code)) return "204";
+    if (code == "211") return "210";
+    if (["214", "213", "218", "219", "222", "224", "225", "226"].contains(code)) return "212";
+    if (["216", "217", "228", "229", "230", "281"].contains(code)) return "215";
+    if (["304", "306", "328", "329", "350"].contains(code)) return "300";
+    if (["309", "322"].contains(code)) return "303";
+    if (["316", "320", "323", "324", "325"].contains(code)) return "311";
+    if (["317", "321"].contains(code)) return "313";
+    if (["315", "326", "327"].contains(code)) return "314";
+    return code;
   }
 }
 
 class GoogleCalendarView extends StatelessWidget {
-  // 2つのカレンダーIDを &src= でつなげる
-  final String calendarId1 = "c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com";
-  final String calendarId2 = "c_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com&ctz=Asia%2FTokyo";
-
   @override
   Widget build(BuildContext context) {
-    // 統合したURLを作成
-    final String combinedUrl =
-        "https://calendar.google.com/calendar/embed"
-        "?src=$calendarId1"
-        "&src=$calendarId2"
-        "&ctz=Asia%2FTokyo"
-        "&showTitle=0"       // タイトル非表示
-        "&showNav=1"         // ★ あえてナビ（前後ボタン）を出すと操作も可能
-        "&showDate=1"        // 日付を表示
-        "&showPrint=0"
-        "&showTabs=0"
-        "&mode=AGENDA" // リスト形式（おすすめ）
-        "&bgcolor=%23ffffff"; // 背景を白に（黒背景なら %23000000）
-    /*
-        "https://calendar.google.com/calendar/embed"
-        "?src=$calendarId1"
-        "&src=$calendarId2"
-        "&ctz=Asia%2FTokyo"
-        "&mode=AGENDA" // リスト形式（おすすめ）
-        "&showTitle=0&showNav=0&showPrint=0&showTabs=0&showCalendars=0";
-
-     */
-    ui_web.platformViewRegistry.registerViewFactory(
-      'calendar-view',
-          (int viewId) {
-        return html.IFrameElement()
-          ..src = combinedUrl
-          ..style.border = 'none'
-          ..width = '100%'
-          ..height = '100%';
-      },
-    );
-
     return HtmlElementView(viewType: 'calendar-view');
   }
 }
 
-//時刻表
 class TripleTimetable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row( // 縦(Column)から横(Row)に変更
+    return Column(
       children: [
-        // 左：JR上り
         Expanded(
           child: SingleTimetable(
-            title: "JR上り",
+            title: "JR佐土原駅 上り",
             url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_nobori.csv",
-            headerColor: Colors.blue[900]!,
+            accentColor: Colors.blueAccent,
           ),
         ),
-        VerticalDivider(width: 1, color: Colors.white24), // 縦の区切り線
-
-        // 中：JR下り
+        Divider(height: 1, color: Colors.white10),
         Expanded(
           child: SingleTimetable(
-            title: "JR下り",
+            title: "JR佐土原駅 下り",
             url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_kudari.csv",
-            headerColor: Colors.red[900]!,
+            accentColor: Colors.redAccent,
           ),
         ),
-        VerticalDivider(width: 1, color: Colors.white24), // 縦の区切り線
-
-        // 右：バス
+        Divider(height: 1, color: Colors.white10),
         Expanded(
           child: SingleTimetable(
-            title: "バス（佐高前）",
+            title: "バス（佐土原高校前）",
             url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_bus.csv",
-            headerColor: Colors.green[900]!,
+            accentColor: Colors.greenAccent,
           ),
         ),
       ],
@@ -456,9 +459,9 @@ class TripleTimetable extends StatelessWidget {
 class SingleTimetable extends StatefulWidget {
   final String title;
   final String url;
-  final Color headerColor;
+  final Color accentColor;
 
-  SingleTimetable({required this.title, required this.url, required this.headerColor});
+  SingleTimetable({required this.title, required this.url, required this.accentColor});
 
   @override
   _SingleTimetableState createState() => _SingleTimetableState();
@@ -467,24 +470,32 @@ class SingleTimetable extends StatefulWidget {
 class _SingleTimetableState extends State<SingleTimetable> {
   List<List<dynamic>> _data = [];
   bool _isLoading = true;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _fetchCSV();
-    // 5分ごとに自動更新
-    Timer.periodic(Duration(minutes: 5), (t) => _fetchCSV());
+    _timer = Timer.periodic(Duration(minutes: 5), (t) => _fetchCSV());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchCSV() async {
     try {
-      final response = await http.get(Uri.parse(widget.url));
+      final response = await http.get(Uri.parse(widget.url)).timeout(Duration(seconds: 10));
       if (response.statusCode == 200) {
         String csvData = utf8.decode(response.bodyBytes);
-        setState(() {
-          _data = const CsvDecoder().convert(csvData);
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _data = const CsvDecoder().convert(csvData);
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       print("${widget.title} エラー: $e");
@@ -496,82 +507,57 @@ class _SingleTimetableState extends State<SingleTimetable> {
     if (_isLoading) return Center(child: CircularProgressIndicator(strokeWidth: 2));
 
     final now = DateTime.now();
-    // 今日の「0時0分」からの経過分を計算 (例: 22:37 -> 1357分)
     final currentTotalMinutes = now.hour * 60 + now.minute;
 
-    // 1. CSVデータを数値で比較してフィルタリング
     List<List<dynamic>> displayData = _data.skip(1).where((row) {
       if (row.length < 3) return false;
-
-      // CSVの時刻 (例: "22:57") を分に変換
       final String timeStr = row[1].toString().trim();
       final parts = timeStr.split(':');
       if (parts.length != 2) return false;
-
       final int rowHour = int.parse(parts[0]);
       final int rowMinute = int.parse(parts[1]);
-      final int rowTotalMinutes = rowHour * 60 + rowMinute;
-
-      // 現在時刻と同じ、または後のものだけ残す
-      return rowTotalMinutes >= currentTotalMinutes;
+      return (rowHour * 60 + rowMinute) >= currentTotalMinutes;
     }).toList();
 
-    // 2. もし今以降の電車がなければ、明日の始発（リストの最初）を表示
     if (displayData.isEmpty && _data.length > 1) {
       displayData = _data.skip(1).toList();
     }
 
-    double screenWidth = MediaQuery.of(context).size.width*3/10;
+    final finalItems = displayData.take(5).toList();
 
-    // 横幅に合わせてフォントサイズを計算（例：横幅の 5%）
-    double timeFontSize = screenWidth * 0.04;
-    double sakiFontSize = screenWidth * 0.03;  // 気温は大きく
-
-    // 3. 上から10つ取り出す
-    final finalItems = displayData.take(10).toList();
-
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          color: widget.headerColor,
-          padding: EdgeInsets.symmetric(vertical: 4),
-          child: Text(widget.title, textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
-        ),
-        Expanded(
-          child: Container(
-            color: Colors.black,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(widget.title, style: TextStyle(fontSize: 12, color: widget.accentColor, fontWeight: FontWeight.bold)),
+          Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.all(4),
+              scrollDirection: Axis.horizontal,
               itemCount: finalItems.length,
               itemBuilder: (context, index) {
                 final row = finalItems[index];
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(row[1].toString(), style: TextStyle(color: Colors.orangeAccent, fontSize: timeFontSize, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-                        // 右側：特急なら赤、それ以外は白っぽい色の小さな文字
-                        if (row[0].toString() == "特急")
-                          Text(row[0].toString(), style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold))
-                        else
-                          Text(row[0].toString(), style: TextStyle(color: Colors.white70, fontSize: 10)),
-                      ],
-                    ),
-                    Text(" ➔ ${row[2].toString()}",
-                        style: TextStyle(color: Colors.white, fontSize: sakiFontSize, fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis),
-                    Divider(color: Colors.white10, height: 8),
-                  ],
+                return Container(
+                  width: 100,
+                  margin: EdgeInsets.only(right: 8, top: 4, bottom: 4),
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(row[1].toString(), style: TextStyle(color: Colors.orangeAccent, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                      Text(row[2].toString(), style: TextStyle(color: Colors.white, fontSize: 10), overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
                 );
               },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
