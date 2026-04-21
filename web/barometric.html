@@ -158,6 +158,37 @@ body.compact .footer {
 body.compact .page {
   padding-bottom: var(--page-pad);
 }
+
+/* Graph Only Mode */
+body.graph-only-mode .header,
+body.graph-only-mode .footer,
+body.graph-only-mode .left-col,
+body.graph-only-mode .mini-row,
+body.graph-only-mode .chart-tabs,
+body.graph-only-mode .alert-strip,
+body.graph-only-mode .logo-sub {
+  display: none !important;
+}
+body.graph-only-mode .body-grid {
+  grid-template-columns: 1fr;
+}
+body.graph-only-mode .chart-wrap {
+  height: calc(100vh - 120px);
+}
+body.graph-only-mode .card {
+  background: transparent;
+  border: none;
+}
+body.graph-only-mode .chart-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 10px;
+}
+body.graph-only-mode .chart-range {
+  font-size: 20px;
+}
+
 .left-col  { display: flex; flex-direction: column; gap: var(--gap); }
 .right-col { display: flex; flex-direction: column; gap: var(--gap); }
 
@@ -655,7 +686,7 @@ body.compact .page {
             stroke-dasharray="87.96" stroke-dashoffset="0"
             stroke-linecap="round"/>
         </svg>
-        <span class="ring-label" id="ringLabel">60</span>
+        <span class="ring-label" id="ringLabel" style="color:var(--accent-cyan); font-size:12px; font-weight:bold;">60</span>
       </div>
       <div class="footer-time" id="footTime">最終更新 ---</div>
     </div>
@@ -682,6 +713,10 @@ if (urlParams.get('hideHeader') === 'true') {
 }
 if (urlParams.get('compact') === 'true') {
   document.body.classList.add('compact');
+}
+const isGraphOnly = urlParams.get('graphOnly') === 'true';
+if (isGraphOnly) {
+  document.body.classList.add('graph-only-mode');
 }
 
 /* ── DATA ── */
@@ -762,23 +797,29 @@ function render(flash) {
   if (flash) { document.body.classList.add('flash'); setTimeout(()=>document.body.classList.remove('flash'),400); }
 
   const rc = document.getElementById('riskCard');
-  rc.style.setProperty('--card-accent',    lv.grad);
-  rc.style.setProperty('--risk-gradient',  lv.grad);
-  rc.style.setProperty('--risk-bar',       lv.bar);
-  rc.style.setProperty('--risk-glow',      lv.glow);
+  if (rc) {
+    rc.style.setProperty('--card-accent',    lv.grad);
+    rc.style.setProperty('--risk-gradient',  lv.grad);
+    rc.style.setProperty('--risk-bar',       lv.bar);
+    rc.style.setProperty('--risk-glow',      lv.glow);
+  }
 
   const pill = document.getElementById('riskPill');
-  pill.textContent = lv.lb;
-  pill.style.background   = lv.bg;
-  pill.style.color        = lv.fg;
-  pill.style.borderColor  = lv.fg;
+  if (pill) {
+    pill.textContent = lv.lb;
+    pill.style.background   = lv.bg;
+    pill.style.color        = lv.fg;
+    pill.style.borderColor  = lv.fg;
+  }
 
-  document.getElementById('riskScore').textContent    = d.pred.toFixed(3);
-  document.getElementById('progressFill').style.width = lv.pct + '%';
+  const scoreEl = document.getElementById('riskScore');
+  if (scoreEl) scoreEl.textContent = d.pred.toFixed(3);
+  const progFill = document.getElementById('progressFill');
+  if (progFill) progFill.style.width = lv.pct + '%';
 
   const icon = document.getElementById('trendIcon');
   const txt  = document.getElementById('trendText');
-  if (prevPred !== null) {
+  if (prevPred !== null && icon && txt) {
     const diff = d.pred - prevPred;
     if (Math.abs(diff) < .005) {
       icon.innerHTML = '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>';
@@ -793,28 +834,30 @@ function render(flash) {
   }
   prevPred = d.pred;
 
-  document.getElementById('mPress').textContent = d.p.toFixed(2);
-  document.getElementById('mTemp').textContent  = d.temp.toFixed(1);
-  document.getElementById('mHumid').textContent = d.h;
+  const mPress = document.getElementById('mPress'); if (mPress) mPress.textContent = d.p.toFixed(2);
+  const mTemp = document.getElementById('mTemp'); if (mTemp) mTemp.textContent = d.temp.toFixed(1);
+  const mHumid = document.getElementById('mHumid'); if (mHumid) mHumid.textContent = d.h;
 
   const pa = liveData.map(r=>r.p);
   const mx = Math.max(...pa), mn = Math.min(...pa), rng = mx-mn;
-  document.getElementById('sMax').textContent   = mx.toFixed(2) + ' hPa';
-  document.getElementById('sMin').textContent   = mn.toFixed(2) + ' hPa';
-  document.getElementById('sRange').textContent = rng.toFixed(2) + ' hPa';
+  const sMax = document.getElementById('sMax'); if (sMax) sMax.textContent = mx.toFixed(2) + ' hPa';
+  const sMin = document.getElementById('sMin'); if (sMin) sMin.textContent = mn.toFixed(2) + ' hPa';
+  const sRange = document.getElementById('sRange'); if (sRange) sRange.textContent = rng.toFixed(2) + ' hPa';
 
   const as = document.getElementById('alertStrip');
-  if (rng > 3.5 || d.pred > 1.4) {
-    as.classList.add('visible');
-    document.getElementById('alertText').textContent = d.pred >= 2.96
-      ? '頭痛リスクが高まっています。水分補給・休養をおすすめします。'
-      : '気圧変動が検出されました。体調の変化にご注意ください。';
-  } else { as.classList.remove('visible'); }
+  if (as) {
+    if (rng > 3.5 || d.pred > 1.4) {
+      as.classList.add('visible');
+      document.getElementById('alertText').textContent = d.pred >= 2.96
+        ? '頭痛リスクが高まっています。水分補給・休養をおすすめします。'
+        : '気圧変動が検出されました。体調の変化にご注意ください。';
+    } else { as.classList.remove('visible'); }
+  }
 
-  document.getElementById('footTime').textContent    = '最終更新 ' + d.t;
-  document.getElementById('miniPressVal').textContent = d.p.toFixed(2)    + ' hPa';
-  document.getElementById('miniTempVal').textContent  = d.temp.toFixed(1)  + ' ℃';
-  document.getElementById('miniHumidVal').textContent = d.h + ' %';
+  const footTime = document.getElementById('footTime'); if (footTime) footTime.textContent = '最終更新 ' + d.t;
+  const miniP = document.getElementById('miniPressVal'); if (miniP) miniP.textContent = d.p.toFixed(2) + ' hPa';
+  const miniT = document.getElementById('miniTempVal'); if (miniT) miniT.textContent = d.temp.toFixed(1) + ' ℃';
+  const miniH = document.getElementById('miniHumidVal'); if (miniH) miniH.textContent = d.h + ' %';
 
   buildMainChart(currentMode);
   buildMiniCharts();
@@ -828,9 +871,8 @@ const MODES = {
 };
 
 const MONO = {family:"'Space Mono',monospace"};
-// Brighter axis tick color and grid color for legibility
 const GC = 'rgba(80,120,255,0.10)';
-const TC = 'rgba(180,210,255,0.70)'; // much brighter tick labels
+const TC = 'rgba(180,210,255,0.70)';
 
 function buildMainChart(mode) {
   const cfg  = MODES[mode];
@@ -839,11 +881,17 @@ function buildMainChart(mode) {
   const mn   = Math.min(...vals), mxv = Math.max(...vals);
   const pad  = Math.max((mxv-mn)*.18,.05);
 
-  document.getElementById('chartTtl').textContent   = cfg.ttl;
-  document.getElementById('chartRange').textContent = mn.toFixed(cfg.dec) + ' – ' + mxv.toFixed(cfg.dec) + (cfg.unit?' '+cfg.unit:'');
+  const ttlEl = document.getElementById('chartTtl'); if (ttlEl) ttlEl.textContent = cfg.ttl;
+  const rangeEl = document.getElementById('chartRange'); if (rangeEl) rangeEl.textContent = mn.toFixed(cfg.dec) + ' – ' + mxv.toFixed(cfg.dec) + (cfg.unit?' '+cfg.unit:'');
+
+  const tickSize = isGraphOnly ? 20 : 11;
+  const xTickSize = isGraphOnly ? 16 : 10;
+
+  const canvas = document.getElementById('mc');
+  if (!canvas) return;
 
   if (mainChart) mainChart.destroy();
-  mainChart = new Chart(document.getElementById('mc'), {
+  mainChart = new Chart(canvas, {
     type: 'line',
     data: {
       labels: lbls,
@@ -851,7 +899,7 @@ function buildMainChart(mode) {
         data: vals,
         borderColor: cfg.color,
         backgroundColor: cfg.fill,
-        borderWidth: 2.5,
+        borderWidth: isGraphOnly ? 5 : 2.5,
         pointRadius: 0,
         pointHoverRadius: 6,
         pointHoverBackgroundColor: cfg.color,
@@ -894,7 +942,7 @@ function buildMainChart(mode) {
           max: mxv + pad,
           ticks: {
             color: TC,
-            font: {...MONO, size: 11},
+            font: {...MONO, size: tickSize},
             maxTicksLimit: 7,
             padding: 8,
             callback: v => v.toFixed(cfg.dec) + (cfg.unit ? ' ' + cfg.unit : '')
@@ -905,10 +953,10 @@ function buildMainChart(mode) {
         x: {
           ticks: {
             color: TC,
-            font: {...MONO, size: 10},
-            maxRotation: 0,
+            font: {...MONO, size: xTickSize},
+            maxRotation: isGraphOnly ? 45 : 0,
             autoSkip: true,
-            maxTicksLimit: 10,
+            maxTicksLimit: isGraphOnly ? 30 : 10,
             padding: 6
           },
           grid: {color: GC, lineWidth: 1},
@@ -928,8 +976,10 @@ function buildMiniCharts() {
     {id:'mcHumid',key:'h',    color:'#00d4ff',fill:'rgba(0,212,255,.15)',   unit:'%',  dec:0}
   ];
   defs.forEach(m => {
+    const canvas = document.getElementById(m.id);
+    if (!canvas) return;
     if (miniCharts[m.id]) miniCharts[m.id].destroy();
-    miniCharts[m.id] = new Chart(document.getElementById(m.id), {
+    miniCharts[m.id] = new Chart(canvas, {
       type:'line',
       data:{
         labels: lbls,
@@ -978,8 +1028,8 @@ function buildMiniCharts() {
 const MODE_KEYS = ['press','pred','temp','humid'];
 let rotateIndex = 0;
 let rotateTick  = 15;
-let rotateActive = true;
-const ROTATE_INTERVAL = 15; // seconds per chart
+let rotateActive = isGraphOnly ? false : true;
+const ROTATE_INTERVAL = 15;
 
 function switchToMode(mode, fromUser) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
@@ -988,7 +1038,6 @@ function switchToMode(mode, fromUser) {
   currentMode = mode;
   buildMainChart(mode);
   if (fromUser) {
-    // reset rotation countdown
     rotateIndex = MODE_KEYS.indexOf(mode);
     rotateTick  = ROTATE_INTERVAL;
     updateRotateBadge();
@@ -998,6 +1047,7 @@ function switchToMode(mode, fromUser) {
 function updateRotateBadge() {
   const badge = document.getElementById('autoRotateBadge');
   const cd    = document.getElementById('rotateCountdown');
+  if (!badge || !cd) return;
   if (!rotateActive) {
     badge.classList.add('paused');
     cd.textContent = '--';
@@ -1007,21 +1057,22 @@ function updateRotateBadge() {
   }
 }
 
-document.getElementById('tabRow').addEventListener('click', e => {
-  const btn = e.target.closest('.tab-btn');
-  if (btn) {
-    switchToMode(btn.dataset.mode, true);
-    return;
-  }
-  // Toggle auto-rotate on badge click
-  if (e.target.closest('#autoRotateBadge')) {
-    rotateActive = !rotateActive;
-    if (rotateActive) rotateTick = ROTATE_INTERVAL;
-    updateRotateBadge();
-  }
-});
+const tabRow = document.getElementById('tabRow');
+if (tabRow) {
+  tabRow.addEventListener('click', e => {
+    const btn = e.target.closest('.tab-btn');
+    if (btn) {
+      switchToMode(btn.dataset.mode, true);
+      return;
+    }
+    if (e.target.closest('#autoRotateBadge')) {
+      rotateActive = !rotateActive;
+      if (rotateActive) rotateTick = ROTATE_INTERVAL;
+      updateRotateBadge();
+    }
+  });
+}
 
-// Rotation tick (called every second from main tick)
 function tickRotate() {
   if (!rotateActive) return;
   rotateTick--;
@@ -1035,15 +1086,21 @@ function tickRotate() {
 
 function updateClock() {
   const n = new Date();
-  document.getElementById('clockTime').textContent =
-    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
-  document.getElementById('clockDate').textContent =
-    n.getFullYear()+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+String(n.getDate()).padStart(2,'0');
+  const timeEl = document.getElementById('clockTime');
+  if (timeEl) {
+    timeEl.textContent = String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  }
+  const dateEl = document.getElementById('clockDate');
+  if (dateEl) {
+    dateEl.textContent = n.getFullYear()+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+String(n.getDate()).padStart(2,'0');
+  }
 }
 
 function updateRing(sec) {
-  document.getElementById('ringCircle').style.strokeDashoffset = RING_C*(1-sec/REFRESH);
-  document.getElementById('ringLabel').textContent = sec;
+  const circle = document.getElementById('ringCircle');
+  if (circle) circle.style.strokeDashoffset = RING_C*(1-sec/REFRESH);
+  const label = document.getElementById('ringLabel');
+  if (label) label.textContent = sec;
 }
 
 function tick() {
