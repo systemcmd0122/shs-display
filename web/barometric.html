@@ -121,26 +121,37 @@ body::after {
 
 /* ── ALERT ── */
 .alert-strip {
-  display: none; align-items: center; gap: 10px;
-  background: rgba(255,69,96,0.07);
-  border: 1px solid rgba(255,69,96,0.22);
-  border-radius: var(--r-md); padding: 10px 14px;
-  font-size: 12px; color: rgba(255,140,155,0.9);
+  display: none; align-items: center; gap: 12px;
+  background: linear-gradient(90deg, rgba(255,69,96,0.1), rgba(255,69,96,0.2), rgba(255,69,96,0.1));
+  border: 1px solid rgba(255,69,96,0.4);
+  border-radius: var(--r-md); padding: 12px 20px;
+  font-size: 1rem; font-weight: bold; color: #ff8a80;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  animation: pulse-border 2s infinite;
 }
 .alert-strip.visible { display: flex; }
+@keyframes pulse-border {
+  0% { border-color: rgba(255,69,96,0.4); }
+  50% { border-color: rgba(255,69,96,0.8); }
+  100% { border-color: rgba(255,69,96,0.4); }
+}
 
 /* ── 2-COL BODY GRID ── */
 .body-grid {
   display: grid;
-  grid-template-columns: clamp(280px, 26vw, 380px) 1fr;
+  grid-template-columns: clamp(280px, 28vw, 420px) 1fr;
   gap: var(--gap);
   align-items: start;
   flex: 1;
 }
+
+#riskCard {
+  background: linear-gradient(165deg, var(--bg2) 0%, var(--bg3) 100%);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+}
 body.compact .body-grid {
   grid-template-columns: 1fr;
 }
-body.compact .right-col,
 body.compact .footer {
   display: none !important;
 }
@@ -171,18 +182,22 @@ body.compact .page {
 
 /* ── RISK CARD ── */
 .risk-top {
-  display: flex; justify-content: space-between;
-  align-items: flex-start; margin-bottom: 14px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; margin-bottom: 20px; gap: 16px;
+  width: 100%;
 }
 .risk-pill {
-  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.1em; padding: 4px 12px;
-  border-radius: 20px; border: 1px solid; text-transform: uppercase;
+  font-family: var(--font-jp); font-size: clamp(36px, 4.5vw, 56px); font-weight: 900;
+  letter-spacing: 0.1em; padding: 12px 48px;
+  border-radius: 50px; border: 3px solid;
   white-space: nowrap;
+  box-shadow: 0 10px 30px var(--risk-glow);
+  background: rgba(255, 255, 255, 0.03);
+  margin-top: 10px;
 }
 .risk-score-num {
-  font-family: var(--font-mono); font-size: clamp(48px, 5.5vw, 72px); font-weight: 700;
-  line-height: 1; letter-spacing: -0.02em;
+  font-family: var(--font-mono); font-size: clamp(18px, 2vw, 24px); font-weight: 700;
+  line-height: 1; letter-spacing: 0.05em;
   background: var(--risk-gradient, linear-gradient(135deg, var(--accent-green), var(--accent-cyan)));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -490,26 +505,28 @@ body.compact .page {
     <div class="left-col">
 
       <!-- Risk -->
-      <div class="card card-accent" id="riskCard">
-        <div class="card-label">// RISK ASSESSMENT</div>
+      <div class="card card-accent" id="riskCard" style="display: flex; flex-direction: column; align-items: center;">
+        <div class="card-label" style="align-self: flex-start;">// RISK ASSESSMENT</div>
         <div class="risk-top">
+          <span class="risk-pill" id="riskPill">---</span>
           <div>
-            <div class="risk-score-num" id="riskScore">0.000</div>
-            <div class="risk-score-denom">/ 5.000 — 頭痛予測スコア</div>
-            <div class="risk-trend">
+            <div style="display: flex; align-items: baseline; justify-content: center; gap: 8px;">
+              <div class="risk-score-num" id="riskScore">0.000</div>
+              <div class="risk-score-denom">/ 5.000</div>
+            </div>
+            <div class="risk-trend" style="justify-content: center;">
               <svg id="trendIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0">
                 <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
               </svg>
               <span id="trendText">計測中…</span>
             </div>
           </div>
-          <span class="risk-pill" id="riskPill">---</span>
         </div>
         <div class="progress-track">
           <div class="progress-fill" id="progressFill" style="width:0%"></div>
         </div>
         <div class="progress-segs">
-          <span class="progress-seg">通常</span>
+          <span class="progress-seg">安定</span>
           <span class="progress-seg">やや注意</span>
           <span class="progress-seg">注意</span>
           <span class="progress-seg">警戒</span>
@@ -709,7 +726,7 @@ const SEED = [
 ];
 
 const LVL = [
-  {max:.32,  lb:'通常',     bg:'rgba(0,229,160,.12)',  fg:'#00e5a0',bar:'#00e5a0',glow:'rgba(0,229,160,.3)',  grad:'linear-gradient(135deg,#00e5a0,#00d4ff)',pct:5},
+  {max:0.5,  lb:'安定',     bg:'rgba(0,229,160,.12)',  fg:'#00e5a0',bar:'#00e5a0',glow:'rgba(0,229,160,.3)',  grad:'linear-gradient(135deg,#00e5a0,#00d4ff)',pct:5},
   {max:1.4,  lb:'やや注意', bg:'rgba(93,232,122,.12)', fg:'#5de87a',bar:'#5de87a',glow:'rgba(93,232,122,.3)', grad:'linear-gradient(135deg,#5de87a,#00d4ff)',pct:28},
   {max:2.96, lb:'注意',     bg:'rgba(255,184,48,.12)', fg:'#ffb830',bar:'#ffb830',glow:'rgba(255,184,48,.3)', grad:'linear-gradient(135deg,#ffb830,#ff8c42)',pct:55},
   {max:3.8,  lb:'警戒',     bg:'rgba(255,100,56,.12)', fg:'#ff6438',bar:'#ff6438',glow:'rgba(255,100,56,.3)', grad:'linear-gradient(135deg,#ff6438,#ff4560)',pct:76},

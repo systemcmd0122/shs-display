@@ -36,7 +36,7 @@ void main() {
   ui_web.platformViewRegistry.registerViewFactory(
     'barometric-view',
     (int viewId) => html.IFrameElement()
-      ..src = 'barometric.html?hideHeader=true&compact=true'
+      ..src = 'barometric.html?hideHeader=true'
       ..style.border = 'none'
       ..width = '100%'
       ..height = '100%',
@@ -77,12 +77,12 @@ class SchoolBoard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 12),
-                // 中央: 頭痛予報、カレンダー、時刻表
+                // 中央: 頭痛予報、カレンダー
                 Expanded(
                   child: Row(
                     children: [
                       Expanded(
-                        flex: 4,
+                        flex: 6,
                         child: PanelContainer(
                           title: "頭痛予報",
                           icon: Icons.speed,
@@ -91,16 +91,34 @@ class SchoolBoard extends StatelessWidget {
                       ),
                       SizedBox(width: 12),
                       Expanded(
-                        flex: 2,
+                        flex: 4,
                         child: PanelContainer(
                           title: "学校行事予定",
                           icon: Icons.calendar_month,
                           child: GoogleCalendarView(),
                         ),
                       ),
-                      SizedBox(width: 12),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12),
+                // 下部: お知らせ、時刻表
+                Container(
+                  height: constraints.maxHeight * 0.25,
+                  child: Row(
+                    children: [
                       Expanded(
                         flex: 4,
+                        child: PanelContainer(
+                          title: "お知らせ",
+                          icon: Icons.campaign,
+                          headerColor: Colors.orange[800]!,
+                          child: Information(),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        flex: 6,
                         child: PanelContainer(
                           title: "交通機関時刻表",
                           icon: Icons.directions_bus,
@@ -108,17 +126,6 @@ class SchoolBoard extends StatelessWidget {
                         ),
                       ),
                     ],
-                  ),
-                ),
-                SizedBox(height: 12),
-                // 下部: お知らせ
-                Container(
-                  height: constraints.maxHeight * 0.22,
-                  child: PanelContainer(
-                    title: "お知らせ",
-                    icon: Icons.campaign,
-                    headerColor: Colors.orange[800]!,
-                    child: Information(),
                   ),
                 ),
               ],
@@ -315,28 +322,27 @@ class _InformationState extends State<Information> {
 
   @override
   Widget build(BuildContext context) {
-    double fontSize = 32;
+    double fontSize = 36;
     if (newsMessage.length > 300) {
-      fontSize = 20;
+      fontSize = 22;
     } else if (newsMessage.length > 150) {
-      fontSize = 24;
+      fontSize = 26;
     } else if (newsMessage.length > 50) {
-      fontSize = 28;
+      fontSize = 30;
     }
 
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      alignment: Alignment.centerLeft,
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: SingleChildScrollView(
         controller: _scrollController,
         child: Text(
           newsMessage,
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
             fontSize: fontSize,
-            height: 1.5,
-            fontWeight: FontWeight.w500,
+            height: 1.4,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
@@ -597,30 +603,39 @@ class _SingleTimetableState extends State<SingleTimetable> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.title, style: TextStyle(fontSize: 12, color: widget.accentColor, fontWeight: FontWeight.bold)),
+          Text(widget.title, style: TextStyle(fontSize: 14, color: widget.accentColor, fontWeight: FontWeight.w900)),
           Expanded(
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: finalItems.length,
-              itemBuilder: (context, index) {
-                final row = finalItems[index];
-                return Container(
-                  width: 100,
-                  margin: EdgeInsets.only(right: 8, top: 4, bottom: 4),
-                  padding: EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(row[1].toString(), style: TextStyle(color: Colors.orangeAccent, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-                      Text(row[2].toString(), style: TextStyle(color: Colors.white, fontSize: 10), overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                );
-              },
+            child: Row(
+              children: List.generate(5, (index) {
+                if (index < finalItems.length) {
+                  final row = finalItems[index];
+                  return Expanded(
+                    child: Container(
+                      margin: EdgeInsets.only(right: index == 4 ? 0 : 8, top: 2, bottom: 2),
+                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                      ),
+                      child: Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(row[1].toString(), style: TextStyle(color: Colors.orangeAccent, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
+                              Text(row[2].toString(), style: TextStyle(color: Colors.white, fontSize: 12), overflow: TextOverflow.ellipsis),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                } else {
+                  return Expanded(child: SizedBox());
+                }
+              }),
             ),
           ),
         ],
