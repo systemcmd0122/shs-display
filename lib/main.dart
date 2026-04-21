@@ -256,6 +256,7 @@ class Information extends StatefulWidget {
 class _InformationState extends State<Information> {
   String newsMessage = "お知らせを読み込み中...";
   Timer? _timer;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -267,6 +268,7 @@ class _InformationState extends State<Information> {
   @override
   void dispose() {
     _timer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -296,26 +298,31 @@ class _InformationState extends State<Information> {
 
   @override
   Widget build(BuildContext context) {
-    double fontSize = 48;
-    if (newsMessage.length > 300) {
-      fontSize = 24;
-    } else if (newsMessage.length > 150) {
+    double fontSize = 44;
+    if (newsMessage.length > 200) {
       fontSize = 32;
-    } else if (newsMessage.length > 50) {
-      fontSize = 40;
     }
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      alignment: Alignment.center,
-      child: Text(
-        newsMessage,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: fontSize,
-          height: 1.4,
-          fontWeight: FontWeight.w900,
+      child: Scrollbar(
+        controller: _scrollController,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          physics: BouncingScrollPhysics(),
+          child: Center(
+            child: Text(
+              newsMessage,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: fontSize,
+                height: 1.4,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -568,46 +575,82 @@ class _SingleTimetableState extends State<SingleTimetable> {
       displayData = _data.skip(1).toList();
     }
 
-    final finalItems = displayData.take(5).toList();
+    final finalItems = displayData.take(20).toList();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.title, style: TextStyle(fontSize: 20, color: widget.accentColor, fontWeight: FontWeight.w900)),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: widget.accentColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(
+                widget.title,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4),
           Expanded(
-            child: Row(
-              children: List.generate(5, (index) {
-                if (index < finalItems.length) {
-                  final row = finalItems[index];
-                  return Expanded(
-                    child: Container(
-                      margin: EdgeInsets.only(right: index == 4 ? 0 : 8, top: 2, bottom: 2),
-                      padding: EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
-                      ),
-                      child: Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(row[1].toString(), style: TextStyle(color: Colors.orangeAccent, fontSize: 48, fontWeight: FontWeight.w900, fontFamily: 'monospace')),
-                              Text(row[2].toString(), style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900), overflow: TextOverflow.ellipsis),
-                            ],
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: finalItems.length,
+              separatorBuilder: (context, index) => SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final row = finalItems[index];
+                return Container(
+                  width: 120,
+                  padding: EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: widget.accentColor.withOpacity(0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          row[1].toString(),
+                          style: TextStyle(
+                            color: Colors.orangeAccent,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'monospace',
+                            height: 1.0,
                           ),
                         ),
-                      ),
+                        Text(
+                          row[2].toString(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                } else {
-                  return Expanded(child: SizedBox());
-                }
-              }),
+                  ),
+                );
+              },
             ),
           ),
         ],

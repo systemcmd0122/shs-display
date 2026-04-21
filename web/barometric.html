@@ -162,18 +162,56 @@ body.compact .page {
 /* Graph Only Mode */
 body.graph-only-mode .header,
 body.graph-only-mode .footer,
-body.graph-only-mode .left-col,
 body.graph-only-mode .mini-row,
 body.graph-only-mode .chart-tabs,
 body.graph-only-mode .alert-strip,
-body.graph-only-mode .logo-sub {
+body.graph-only-mode .logo-sub,
+body.graph-only-mode .metrics-grid,
+body.graph-only-mode .stats-row {
   display: none !important;
 }
 body.graph-only-mode .body-grid {
   grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+body.graph-only-mode .left-col,
+body.graph-only-mode .right-col {
+  display: block !important;
+  width: 100%;
+}
+body.graph-only-mode #riskCard {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+body.graph-only-mode .risk-top {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+body.graph-only-mode .risk-pill {
+  font-size: 48px;
+  padding: 4px 32px;
+}
+body.graph-only-mode .risk-score-num {
+  font-size: 28px;
+}
+body.graph-only-mode .progress-track {
+  display: none;
+}
+body.graph-only-mode .progress-segs {
+  display: none;
+}
+body.graph-only-mode .card-label {
+  display: none;
 }
 body.graph-only-mode .chart-wrap {
-  height: calc(100vh - 120px);
+  height: calc(100vh - 180px);
 }
 body.graph-only-mode .card {
   background: transparent;
@@ -956,7 +994,7 @@ function buildMainChart(mode) {
             font: {...MONO, size: xTickSize},
             maxRotation: isGraphOnly ? 45 : 0,
             autoSkip: true,
-            maxTicksLimit: isGraphOnly ? 30 : 10,
+            maxTicksLimit: isGraphOnly ? 12 : 10,
             padding: 6
           },
           grid: {color: GC, lineWidth: 1},
@@ -1111,7 +1149,7 @@ function tick() {
   if (countdown <= 0) {
     countdown = REFRESH;
     liveData.push(nextPoint(liveData.at(-1)));
-    if (liveData.length > 80) liveData.shift();
+    if (liveData.length > 144) liveData.shift(); // 24 hours (10 min intervals)
     render(true);
   }
 }
