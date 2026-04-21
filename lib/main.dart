@@ -36,7 +36,7 @@ void main() {
   ui_web.platformViewRegistry.registerViewFactory(
     'barometric-view',
     (int viewId) => html.IFrameElement()
-      ..src = 'barometric.html?hideHeader=true'
+      ..src = 'barometric.html?graphOnly=true'
       ..style.border = 'none'
       ..width = '100%'
       ..height = '100%',
@@ -104,7 +104,7 @@ class SchoolBoard extends StatelessWidget {
                 SizedBox(height: 12),
                 // 下部: お知らせ、時刻表
                 Container(
-                  height: constraints.maxHeight * 0.25,
+                  height: constraints.maxHeight * 0.28,
                   child: Row(
                     children: [
                       Expanded(
@@ -173,13 +173,13 @@ class PanelContainer extends StatelessWidget {
             color: headerColor ?? Colors.blueGrey[800],
             child: Row(
               children: [
-                Icon(icon, size: 20, color: Colors.white),
+                Icon(icon, size: 22, color: Colors.white),
                 SizedBox(width: 8),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
                   ),
                 ),
@@ -256,43 +256,17 @@ class Information extends StatefulWidget {
 class _InformationState extends State<Information> {
   String newsMessage = "お知らせを読み込み中...";
   Timer? _timer;
-  final ScrollController _scrollController = ScrollController();
-  Timer? _scrollTimer;
 
   @override
   void initState() {
     super.initState();
     fetchNews();
     _timer = Timer.periodic(Duration(minutes: 5), (timer) => fetchNews());
-    _startScrolling();
-  }
-
-  void _startScrolling() {
-    _scrollTimer?.cancel();
-    _scrollTimer = Timer.periodic(Duration(milliseconds: 50), (timer) {
-      if (_scrollController.hasClients) {
-        double maxScroll = _scrollController.position.maxScrollExtent;
-        double currentScroll = _scrollController.position.pixels;
-        if (maxScroll > 0) {
-          if (currentScroll >= maxScroll) {
-            _scrollController.jumpTo(0);
-          } else {
-            _scrollController.animateTo(
-              currentScroll + 1,
-              duration: Duration(milliseconds: 50),
-              curve: Curves.linear,
-            );
-          }
-        }
-      }
-    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _scrollTimer?.cancel();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -322,28 +296,26 @@ class _InformationState extends State<Information> {
 
   @override
   Widget build(BuildContext context) {
-    double fontSize = 36;
+    double fontSize = 48;
     if (newsMessage.length > 300) {
-      fontSize = 22;
+      fontSize = 24;
     } else if (newsMessage.length > 150) {
-      fontSize = 26;
+      fontSize = 32;
     } else if (newsMessage.length > 50) {
-      fontSize = 30;
+      fontSize = 40;
     }
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: SingleChildScrollView(
-        controller: _scrollController,
-        child: Text(
-          newsMessage,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: fontSize,
-            height: 1.4,
-            fontWeight: FontWeight.bold,
-          ),
+      alignment: Alignment.center,
+      child: Text(
+        newsMessage,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: fontSize,
+          height: 1.4,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
@@ -599,11 +571,11 @@ class _SingleTimetableState extends State<SingleTimetable> {
     final finalItems = displayData.take(5).toList();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.title, style: TextStyle(fontSize: 14, color: widget.accentColor, fontWeight: FontWeight.w900)),
+          Text(widget.title, style: TextStyle(fontSize: 20, color: widget.accentColor, fontWeight: FontWeight.w900)),
           Expanded(
             child: Row(
               children: List.generate(5, (index) {
@@ -612,11 +584,11 @@ class _SingleTimetableState extends State<SingleTimetable> {
                   return Expanded(
                     child: Container(
                       margin: EdgeInsets.only(right: index == 4 ? 0 : 8, top: 2, bottom: 2),
-                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      padding: EdgeInsets.symmetric(vertical: 2, horizontal: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                        color: Colors.white.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
                       ),
                       child: Center(
                         child: FittedBox(
@@ -624,8 +596,8 @@ class _SingleTimetableState extends State<SingleTimetable> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(row[1].toString(), style: TextStyle(color: Colors.orangeAccent, fontSize: 22, fontWeight: FontWeight.bold, fontFamily: 'monospace')),
-                              Text(row[2].toString(), style: TextStyle(color: Colors.white, fontSize: 12), overflow: TextOverflow.ellipsis),
+                              Text(row[1].toString(), style: TextStyle(color: Colors.orangeAccent, fontSize: 48, fontWeight: FontWeight.w900, fontFamily: 'monospace')),
+                              Text(row[2].toString(), style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900), overflow: TextOverflow.ellipsis),
                             ],
                           ),
                         ),
