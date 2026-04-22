@@ -6,6 +6,8 @@ import 'package:csv/csv.dart';
 import 'dart:async';
 import 'dart:convert';
 
+const String barometricApiKey = "AIzaSyAsueqj-8qHU6nejrrCqC2jY45OJMHy50I";
+
 void main() {
   final String calendarId1 =
       "c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com";
@@ -35,14 +37,11 @@ void main() {
     return el;
   });
 
-  // graphMode: 'press' = 気圧グラフ固定, 'rotate' = 4種ローテーション
-  const String barometricGraphMode = 'press'; // 'press' または 'rotate'
-
   ui_web.platformViewRegistry.registerViewFactory('barometric-view', (
     int viewId,
   ) {
     final el = web.document.createElement('iframe') as web.HTMLIFrameElement;
-    el.src = 'barometric.html?graphMode=$barometricGraphMode';
+    el.src = 'barometric.html?key=$barometricApiKey';
     el.style.border = 'none';
     el.width = '100%';
     el.height = '100%';
@@ -56,7 +55,7 @@ void main() {
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
-        fontFamily: 'Roboto',
+        fontFamily: 'Noto Sans JP',
       ),
       home: const SchoolBoard(),
     ),
@@ -72,37 +71,38 @@ class SchoolBoard extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // 上部: 時計と天気
+                // 上部: 時計と天気 (18%)
                 SizedBox(
-                  height: constraints.maxHeight * 0.20,
+                  height: constraints.maxHeight * 0.18,
                   child: const Row(
                     children: [
                       Expanded(flex: 4, child: DigitalClock()),
-                      VerticalDivider(color: Colors.white24, width: 32),
+                      VerticalDivider(color: Colors.white10, width: 40),
                       Expanded(flex: 6, child: WeatherPanel()),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                // 中央: 頭痛予報、カレンダー
-                const Expanded(
+                const SizedBox(height: 16),
+                // 中央: 頭痛予報 (3) vs カレンダー (7) (34%)
+                Expanded(
+                  flex: 34,
                   child: Row(
                     children: [
-                      Expanded(
-                        flex: 6,
+                      const Expanded(
+                        flex: 3,
                         child: PanelContainer(
-                          title: "頭痛予報（頭痛ナビ）Created by 情報技術部アプリ班",
+                          title: "頭痛予報",
                           icon: Icons.speed,
                           child: HeadacheForecastView(),
                         ),
                       ),
-                      SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       Expanded(
-                        flex: 4,
-                        child: PanelContainer(
+                        flex: 7,
+                        child: const PanelContainer(
                           title: "学校行事予定",
                           icon: Icons.calendar_month,
                           child: GoogleCalendarView(),
@@ -111,26 +111,26 @@ class SchoolBoard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                // 下部: お知らせ、時刻表
-                SizedBox(
-                  height: constraints.maxHeight * 0.28,
+                const SizedBox(height: 16),
+                // 下部: お知らせ (5) vs 時刻表 (5) (42%)
+                Expanded(
+                  flex: 42,
                   child: Row(
                     children: [
                       Expanded(
-                        flex: 4,
+                        flex: 5,
                         child: PanelContainer(
                           title: "お知らせ",
                           icon: Icons.campaign,
-                          headerColor: Colors.orange[800]!,
+                          headerColor: Colors.deepOrange[900]!,
                           child: const Information(),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       const Expanded(
-                        flex: 6,
+                        flex: 5,
                         child: PanelContainer(
-                          title: "交通機関時刻表",
+                          title: "交通機関時刻表・運行情報",
                           icon: Icons.directions_bus,
                           child: TripleTimetable(),
                         ),
@@ -165,14 +165,14 @@ class PanelContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        color: const Color(0xFF121212),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.6),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -180,18 +180,23 @@ class PanelContainer extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: headerColor ?? Colors.blueGrey[800],
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: headerColor ?? Colors.blueGrey[900],
+              border: const Border(bottom: BorderSide(color: Colors.white12)),
+            ),
             child: Row(
               children: [
-                Icon(icon, size: 22, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
+                Icon(icon, size: 24, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
               ],
@@ -227,7 +232,7 @@ class DigitalClock extends StatelessWidget {
             children: [
               Text(
                 dateStr + weekDayStr,
-                style: const TextStyle(fontSize: 24, color: Colors.white70),
+                style: const TextStyle(fontSize: 28, color: Colors.white70, fontWeight: FontWeight.bold),
               ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -236,17 +241,17 @@ class DigitalClock extends StatelessWidget {
                   Text(
                     timeStr,
                     style: const TextStyle(
-                      fontSize: 100,
+                      fontSize: 120,
                       fontWeight: FontWeight.w900,
                       color: Colors.cyanAccent,
                       fontFamily: 'monospace',
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Text(
                     secondStr,
                     style: TextStyle(
-                      fontSize: 40,
+                      fontSize: 48,
                       fontWeight: FontWeight.bold,
                       color: Colors.cyanAccent.withValues(alpha: 0.7),
                       fontFamily: 'monospace',
@@ -272,54 +277,18 @@ class Information extends StatefulWidget {
 class InformationState extends State<Information> {
   String newsMessage = "お知らせを読み込み中...";
   Timer? _timer;
-  Timer? _scrollTimer;
-  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    fetchNews().then((_) {
-      Future.delayed(const Duration(seconds: 2), () => _startAutoScroll());
-    });
+    fetchNews();
     _timer = Timer.periodic(const Duration(minutes: 5), (timer) => fetchNews());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _scrollTimer?.cancel();
-    _scrollController.dispose();
     super.dispose();
-  }
-
-  void _startAutoScroll() {
-    _scrollTimer?.cancel();
-    _scrollTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
-      if (_scrollController.hasClients) {
-        final double maxScroll = _scrollController.position.maxScrollExtent;
-        final double currentScroll = _scrollController.position.pixels;
-        if (maxScroll > 0) {
-          if (currentScroll >= maxScroll) {
-            _scrollTimer?.cancel();
-            Future.delayed(const Duration(seconds: 5), () {
-              if (mounted) {
-                _scrollController.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 1500),
-                  curve: Curves.easeInOut,
-                );
-                Future.delayed(
-                  const Duration(seconds: 3),
-                  () => _startAutoScroll(),
-                );
-              }
-            });
-          } else {
-            _scrollController.jumpTo(currentScroll + 0.6);
-          }
-        }
-      }
-    });
   }
 
   Future<void> fetchNews() async {
@@ -335,52 +304,40 @@ class InformationState extends State<Information> {
           setState(() {
             newsMessage = data['message'] ?? "お知らせはありません。";
           });
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted && _scrollController.hasClients) {
-              _scrollController.jumpTo(0);
-              _startAutoScroll();
-            }
-          });
         }
       }
     } catch (e) {
       debugPrint("お知らせ取得エラー: $e");
-      if (mounted) {
-        setState(() {
-          if (newsMessage == "お知らせを読み込み中...") {
-            newsMessage = "お知らせを取得できませんでした。";
-          }
-        });
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final double fontSize = newsMessage.length > 200 ? 32 : 44;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Scrollbar(
-        controller: _scrollController,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          physics: const BouncingScrollPhysics(),
-          child: Center(
-            child: Text(
-              newsMessage,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: fontSize,
-                height: 1.4,
-                fontWeight: FontWeight.w900,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 収まるようにFittedBoxを使用しつつ、極端に小さくならないようにする
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.9),
+                child: Text(
+                  newsMessage,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 44, // 基本は大きく表示
+                    height: 1.4,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -395,17 +352,13 @@ class WeatherPanel extends StatefulWidget {
 class WeatherPanelState extends State<WeatherPanel> {
   Map<String, dynamic>? today;
   Map<String, dynamic>? tomorrow;
-  String errorMsg = "";
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     fetchWeather();
-    _timer = Timer.periodic(
-      const Duration(hours: 1),
-      (timer) => fetchWeather(),
-    );
+    _timer = Timer.periodic(const Duration(hours: 1), (timer) => fetchWeather());
   }
 
   @override
@@ -427,27 +380,16 @@ class WeatherPanelState extends State<WeatherPanel> {
           setState(() {
             today = data['today'];
             tomorrow = data['tomorrow'];
-            errorMsg = "";
           });
         }
-      } else {
-        throw Exception("Status code: ${response.statusCode}");
       }
     } catch (e) {
       debugPrint("天気取得エラー: $e");
-      if (mounted) {
-        setState(() => errorMsg = "天気予報の取得に失敗しました");
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (errorMsg.isNotEmpty && today == null) {
-      return Center(
-        child: Text(errorMsg, style: const TextStyle(color: Colors.redAccent)),
-      );
-    }
     if (today == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -456,7 +398,7 @@ class WeatherPanelState extends State<WeatherPanel> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildWeatherColumn("今日", today!),
-        const VerticalDivider(color: Colors.white10, indent: 20, endIndent: 20),
+        const VerticalDivider(color: Colors.white10, indent: 15, endIndent: 15),
         _buildWeatherColumn("明日", tomorrow!),
       ],
     );
@@ -472,44 +414,24 @@ class WeatherPanelState extends State<WeatherPanel> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              label,
-              style: const TextStyle(fontSize: 18, color: Colors.white70),
-            ),
+            Text(label, style: const TextStyle(fontSize: 20, color: Colors.white70, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
             Image.network(
               'https://www.jma.go.jp/bosai/forecast/img/$displayCode.png',
-              width: 80,
-              height: 80,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.wb_cloudy, size: 64),
+              width: 90, height: 90,
+              errorBuilder: (context, error, stackTrace) => const Icon(Icons.wb_cloudy, size: 64),
             ),
-            Text(
-              data['desc'] ?? "",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
+            const SizedBox(height: 4),
+            Text(data['desc'] ?? "", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (data['high'] != null && data['high'] != "--")
-                  Text(
-                    "${data['high']}°",
-                    style: const TextStyle(
-                      fontSize: 24,
-                      color: Colors.orangeAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text("${data['high']}°", style: const TextStyle(fontSize: 28, color: Colors.orangeAccent, fontWeight: FontWeight.w900)),
                 if (data['low'] != null && data['low'] != "--") ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    "${data['low']}°",
-                    style: const TextStyle(
-                      fontSize: 24,
-                      color: Colors.blueAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  const SizedBox(width: 12),
+                  Text("${data['low']}°", style: const TextStyle(fontSize: 28, color: Colors.blueAccent, fontWeight: FontWeight.w900)),
                 ],
               ],
             ),
@@ -521,27 +443,19 @@ class WeatherPanelState extends State<WeatherPanel> {
 
   String _convertWeatherCode(String code) {
     if (code.length != 3) return code;
-    if (["103", "106", "107", "108", "120", "121", "140"].contains(code)) {
-      return "102";
-    }
+    if (["103", "106", "107", "108", "120", "121", "140"].contains(code)) return "102";
     if (["105", "160", "170"].contains(code)) return "104";
     if (code == "111") return "110";
-    if (["113", "114", "118", "119", "125", "126", "127", "128"].contains(code)) {
-      return "112";
-    }
+    if (["113", "114", "118", "119", "125", "126", "127", "128"].contains(code)) return "112";
     if (["116", "117", "181"].contains(code)) return "115";
     if (["123", "124", "130", "131"].contains(code)) return "100";
     if (code == "132") return "101";
     if (["209", "231"].contains(code)) return "200";
     if (code == "223") return "201";
-    if (["203", "206", "207", "208", "220", "221", "240"].contains(code)) {
-      return "202";
-    }
+    if (["203", "206", "207", "208", "220", "221", "240"].contains(code)) return "202";
     if (["205", "250", "260", "270"].contains(code)) return "204";
     if (code == "211") return "210";
-    if (["214", "213", "218", "219", "222", "224", "225", "226"].contains(code)) {
-      return "212";
-    }
+    if (["214", "213", "218", "219", "222", "224", "225", "226"].contains(code)) return "212";
     if (["216", "217", "228", "229", "230", "281"].contains(code)) return "215";
     if (["304", "306", "328", "329", "350"].contains(code)) return "300";
     if (["309", "322"].contains(code)) return "303";
@@ -554,52 +468,121 @@ class WeatherPanelState extends State<WeatherPanel> {
 
 class GoogleCalendarView extends StatelessWidget {
   const GoogleCalendarView({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return const HtmlElementView(viewType: 'calendar-view');
-  }
+  Widget build(BuildContext context) => const HtmlElementView(viewType: 'calendar-view');
 }
 
 class HeadacheForecastView extends StatelessWidget {
   const HeadacheForecastView({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return const HtmlElementView(viewType: 'barometric-view');
-  }
+  Widget build(BuildContext context) => const HtmlElementView(viewType: 'barometric-view');
 }
 
-class TripleTimetable extends StatelessWidget {
+class TripleTimetable extends StatefulWidget {
   const TripleTimetable({super.key});
+  @override
+  State<TripleTimetable> createState() => _TripleTimetableState();
+}
+
+class _TripleTimetableState extends State<TripleTimetable> {
+  String delayInfo = "運行情報: 日豊本線 取得中...";
+  Color delayColor = Colors.white54;
+  Timer? _delayTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDelayInfo();
+    _delayTimer = Timer.periodic(const Duration(minutes: 5), (t) => fetchDelayInfo());
+  }
+
+  @override
+  void dispose() {
+    _delayTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> fetchDelayInfo() async {
+    const String statusUrl = "https://www.jrkyushu.co.jp/trains/info/miya.html";
+    const String proxyUrl = "https://api.allorigins.win/raw?url=";
+    try {
+      final response = await http.get(Uri.parse(proxyUrl + statusUrl)).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final html = response.body;
+        if (html.contains("メンテナンス中")) {
+          setState(() {
+            delayInfo = "運行情報: JR九州 メンテナンス中";
+            delayColor = Colors.orangeAccent;
+          });
+        } else if (html.contains("平常通り") || html.contains("遅れ等の情報はありません")) {
+          setState(() {
+            delayInfo = "運行情報: 日豊本線 平常通り";
+            delayColor = Colors.greenAccent;
+          });
+        } else {
+          // 詳しい遅延情報がある場合
+          setState(() {
+            delayInfo = "運行情報: 日豊本線 遅延・運休情報あり (JR九州HPを確認)";
+            delayColor = Colors.redAccent;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("遅延情報取得エラー: $e");
+      if (mounted) {
+        setState(() {
+          delayInfo = "運行情報: 日豊本線 取得失敗 (平常通りの見込み)";
+          delayColor = Colors.white54;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       children: [
-        Expanded(
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+          decoration: BoxDecoration(
+            color: delayColor.withValues(alpha: 0.1),
+            border: Border(bottom: BorderSide(color: delayColor.withValues(alpha: 0.2))),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 16, color: delayColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  delayInfo,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: delayColor, fontWeight: FontWeight.w900, fontSize: 15),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Expanded(
           child: SingleTimetable(
-            title: "JR佐土原駅 上り",
-            url:
-                "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_nobori.csv",
+            title: "JR佐土原駅 上り (延岡方面)",
+            url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_nobori.csv",
             accentColor: Colors.blueAccent,
           ),
         ),
-        Divider(height: 1, color: Colors.white10),
-        Expanded(
+        const Divider(height: 1, color: Colors.white12),
+        const Expanded(
           child: SingleTimetable(
-            title: "JR佐土原駅 下り",
-            url:
-                "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_kudari.csv",
+            title: "JR佐土原駅 下り (宮崎方面)",
+            url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_kudari.csv",
             accentColor: Colors.redAccent,
           ),
         ),
-        Divider(height: 1, color: Colors.white10),
-        Expanded(
+        const Divider(height: 1, color: Colors.white12),
+        const Expanded(
           child: SingleTimetable(
-            title: "バス（佐土原高校前）",
-            url:
-                "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_bus.csv",
+            title: "宮崎交通バス (佐土原高校前)",
+            url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_bus.csv",
             accentColor: Colors.greenAccent,
           ),
         ),
@@ -612,14 +595,7 @@ class SingleTimetable extends StatefulWidget {
   final String title;
   final String url;
   final Color accentColor;
-
-  const SingleTimetable({
-    super.key,
-    required this.title,
-    required this.url,
-    required this.accentColor,
-  });
-
+  const SingleTimetable({super.key, required this.title, required this.url, required this.accentColor});
   @override
   SingleTimetableState createState() => SingleTimetableState();
 }
@@ -644,9 +620,7 @@ class SingleTimetableState extends State<SingleTimetable> {
 
   Future<void> _fetchCSV() async {
     try {
-      final response = await http
-          .get(Uri.parse(widget.url))
-          .timeout(const Duration(seconds: 10));
+      final response = await http.get(Uri.parse(widget.url)).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final String csvData = utf8.decode(response.bodyBytes);
         if (mounted) {
@@ -663,9 +637,7 @@ class SingleTimetableState extends State<SingleTimetable> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-    }
+    if (_isLoading) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
 
     final now = DateTime.now();
     final int currentTotalMinutes = now.hour * 60 + now.minute;
@@ -675,94 +647,46 @@ class SingleTimetableState extends State<SingleTimetable> {
       final String timeStr = row[1].toString().trim();
       final List<String> parts = timeStr.split(':');
       if (parts.length != 2) return false;
-      final int rowHour = int.parse(parts[0]);
-      final int rowMinute = int.parse(parts[1]);
-      return (rowHour * 60 + rowMinute) >= currentTotalMinutes;
+      return (int.parse(parts[0]) * 60 + int.parse(parts[1])) >= currentTotalMinutes;
     }).toList();
 
-    if (displayData.isEmpty && _data.length > 1) {
-      displayData = _data.skip(1).toList();
-    }
-
-    final List<List<dynamic>> finalItems = displayData.take(20).toList();
+    if (displayData.isEmpty && _data.length > 1) displayData = _data.skip(1).toList();
+    final List<List<dynamic>> finalItems = displayData.take(5).toList();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: widget.accentColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                widget.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
+          Text(widget.title, style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 6),
           Expanded(
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: finalItems.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final List<dynamic> row = finalItems[index];
-                return Container(
-                  width: 120,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 2,
-                    horizontal: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: widget.accentColor.withValues(alpha: 0.3),
-                      width: 1.5,
+            child: Row(
+              children: finalItems.map((row) {
+                return Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: widget.accentColor.withValues(alpha: 0.25), width: 1.5),
                     ),
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          row[1].toString(),
-                          style: const TextStyle(
-                            color: Colors.orangeAccent,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'monospace',
-                            height: 1.0,
-                          ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(row[1].toString(), style: const TextStyle(color: Colors.orangeAccent, fontSize: 32, fontWeight: FontWeight.w900, fontFamily: 'monospace')),
+                            Text(row[2].toString(), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                          ],
                         ),
-                        Text(
-                          row[2].toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 );
-              },
+              }).toList(),
             ),
           ),
         ],

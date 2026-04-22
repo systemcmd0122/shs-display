@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>頭痛予報 — BAROMETRIC</title>
+<title>頭痛予報 — BAROMETRIC MINIMAL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg0: #050709;
   --bg2: #10141f;
-  --bg3: #161b28;
   --border:  rgba(80,120,255,0.10);
   --text-primary:   #dce8ff;
   --text-dim:       rgba(130,160,220,0.38);
@@ -18,644 +17,148 @@
   --accent-cyan:   #00d4ff;
   --accent-green:  #00e5a0;
   --accent-orange: #ff8c42;
-  --glow-blue:  rgba(74,143,255,0.18);
-  --glow-cyan:  rgba(0,212,255,0.14);
-  --glow-green: rgba(0,229,160,0.14);
   --font-mono: 'Space Mono', monospace;
   --font-jp:   'Noto Sans JP', sans-serif;
   --r-md: 10px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
-body {
-  background: var(--bg0);
-  color: var(--text-primary);
-  font-family: var(--font-jp);
-}
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(74,143,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(74,143,255,0.025) 1px, transparent 1px);
-  background-size: 48px 48px;
-  pointer-events: none; z-index: 0;
-}
+html, body { height: 100%; overflow: hidden; background: transparent; }
 
-/* ── PAGE ── */
 .page {
-  position: relative; z-index: 1;
-  height: 100vh; height: 100dvh;
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  overflow: hidden;
-}
-
-/* ── LEFT COL ── */
-.left-col {
-  width: 200px;
-  flex-shrink: 0;
+  height: 100vh;
+  padding: 4px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   justify-content: center;
+  align-items: center;
 }
 
-/* ── RIGHT COL ── */
-.right-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
-
-/* ── CARD ── */
 .card {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  position: relative; overflow: hidden;
-}
-.card-accent::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: var(--card-accent, var(--accent-blue));
-  border-radius: var(--r-md) var(--r-md) 0 0;
-}
-
-/* ── RISK CARD ── */
-#riskCard {
-  padding: 10px 12px;
-  flex-shrink: 0;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
 }
-.card-label {
-  font-family: var(--font-mono); font-size: 8px;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--text-dim); margin-bottom: 6px;
-  align-self: flex-start;
-}
-.risk-top {
-  display: flex; flex-direction: column; align-items: center;
-  text-align: center; gap: 6px; width: 100%;
-}
+
 .risk-pill {
-  font-family: var(--font-jp); font-size: clamp(18px, 2.8vw, 28px); font-weight: 900;
-  letter-spacing: 0.06em; padding: 4px 14px;
-  border-radius: 50px; border: 3px solid;
-  white-space: nowrap;
-  box-shadow: 0 8px 24px var(--risk-glow);
-  background: rgba(255,255,255,0.03);
-}
-.risk-score-num {
-  font-family: var(--font-mono); font-size: clamp(14px, 2vw, 20px); font-weight: 700;
-  line-height: 1; letter-spacing: 0.05em;
-  background: var(--risk-gradient, linear-gradient(135deg, var(--accent-green), var(--accent-cyan)));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.risk-score-denom {
-  font-family: var(--font-mono); font-size: 9px;
-  color: var(--text-dim); margin-top: 2px;
-}
-.risk-trend {
-  display: flex; align-items: center; gap: 6px;
-  font-family: var(--font-mono); font-size: 9px;
-  color: var(--text-dim); margin-top: 2px;
-}
-.progress-track {
-  height: 3px; border-radius: 4px;
-  background: rgba(255,255,255,0.05);
-  margin: 6px 0 3px; width: 100%;
-}
-.progress-fill {
-  height: 100%; border-radius: 4px;
-  background: var(--risk-bar, var(--accent-green));
-  box-shadow: 0 0 8px var(--risk-glow, var(--glow-green));
-  transition: width .8s cubic-bezier(.34,1.56,.64,1);
-  position: relative;
-}
-.progress-fill::after {
-  content: ''; position: absolute; right: -1px; top: -3px;
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--risk-bar, var(--accent-green));
-  box-shadow: 0 0 6px var(--risk-glow, var(--glow-green));
-}
-.progress-segs { display: flex; justify-content: space-between; width: 100%; }
-.progress-seg {
-  font-family: var(--font-mono); font-size: 6px;
-  color: var(--text-dim);
+  font-family: var(--font-jp); font-size: clamp(16px, 4vw, 24px); font-weight: 900;
+  padding: 2px 12px; border-radius: 50px; border: 2px solid;
+  margin-bottom: 4px;
+  box-shadow: 0 4px 12px var(--risk-glow);
 }
 
-/* ── METRICS ── */
-.metrics-grid {
-  display: flex; flex-direction: column; gap: 5px;
-}
-.metric-card {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--r-md); padding: 7px 10px;
-  display: flex; flex-direction: row;
-  align-items: center; gap: 8px;
-  position: relative; overflow: hidden;
-}
-.metric-card::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--m-color, var(--accent-blue)), transparent);
-  opacity: .4;
-}
-.metric-icon {
-  display: block; width: 15px; height: 15px; flex-shrink: 0;
-  color: var(--m-color, var(--accent-blue));
-  filter: drop-shadow(0 0 4px var(--m-color, var(--accent-blue)));
-}
-.metric-info { display: flex; flex-direction: column; }
-.metric-lbl {
-  font-family: var(--font-mono); font-size: 8px; color: var(--text-dim);
-  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1px;
-}
-.metric-val {
-  font-family: var(--font-mono); font-size: clamp(14px, 1.8vw, 18px); font-weight: 700;
-  color: var(--m-color, var(--text-primary)); line-height: 1;
-}
-.metric-unit {
-  font-family: var(--font-mono); font-size: 8px;
-  color: var(--text-dim); margin-top: 1px;
-}
-
-/* ── CHART CARD ── */
-.chart-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding: 8px 10px;
-}
-.chart-header {
-  display: flex; justify-content: space-between;
-  align-items: center; margin-bottom: 6px; flex-shrink: 0;
-}
-.chart-title {
-  font-size: clamp(13px, 2vw, 18px); font-weight: 900; color: #fff;
-}
-.chart-range {
-  font-family: var(--font-mono); font-size: clamp(10px, 1.2vw, 13px);
-  color: var(--text-dim); font-variant-numeric: tabular-nums;
-}
-.chart-wrap {
-  flex: 1; min-height: 0; position: relative;
-}
-
-/* ── UPDATE STATUS BAR ── */
-.update-bar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-shrink: 0;
-  margin-top: 4px;
-}
-.update-chip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(74,143,255,0.07);
-  border: 1px solid rgba(74,143,255,0.15);
-  border-radius: 20px;
-  padding: 2px 9px;
+.score-row {
+  display: flex; align-items: baseline; gap: 4px;
   font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text-dim);
-  letter-spacing: 0.08em;
-  white-space: nowrap;
 }
-.update-chip .dot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: var(--accent-green);
-  box-shadow: 0 0 5px var(--accent-green);
-  animation: pulse-dot 2s ease-in-out infinite;
-  flex-shrink: 0;
-}
-.update-chip .dot.fetching {
-  background: var(--accent-orange);
-  box-shadow: 0 0 5px var(--accent-orange);
-}
-@keyframes pulse-dot {
-  0%,100% { opacity: 1; }
-  50%      { opacity: 0.35; }
-}
-.update-time { color: rgba(180,210,255,0.75); }
-.countdown-val { color: var(--accent-cyan); font-weight: 700; }
+.score-num { font-size: 18px; font-weight: 700; color: var(--accent-cyan); }
+.score-unit { font-size: 10px; color: var(--text-dim); }
 
-/* ── GRAPH MODE BADGE ── */
-.mode-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(0,212,255,0.07);
-  border: 1px solid rgba(0,212,255,0.18);
-  border-radius: 20px;
-  padding: 2px 9px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--accent-cyan);
-  letter-spacing: 0.06em;
+.trend {
+  font-size: 10px; color: var(--text-dim); margin-top: 2px;
+  display: flex; align-items: center; gap: 4px;
+}
+
+#mc-container {
+  width: 100%; flex: 1; min-height: 60px; margin-top: 4px;
 }
 </style>
 </head>
 <body>
 <div class="page">
-
-  <!-- LEFT -->
-  <div class="left-col">
-
-    <!-- Risk -->
-    <div class="card card-accent" id="riskCard">
-      <div class="card-label">// RISK ASSESSMENT</div>
-      <div class="risk-top">
-        <span class="risk-pill" id="riskPill">---</span>
-        <div>
-          <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;">
-            <div class="risk-score-num" id="riskScore">0.000</div>
-            <div class="risk-score-denom">/ 5.000</div>
-          </div>
-          <div class="risk-trend" style="justify-content:center;">
-            <svg id="trendIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="flex-shrink:0">
-              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-            </svg>
-            <span id="trendText">計測中…</span>
-          </div>
-        </div>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="progressFill" style="width:0%"></div>
-      </div>
-      <div class="progress-segs">
-        <span class="progress-seg">安定</span>
-        <span class="progress-seg">やや注意</span>
-        <span class="progress-seg">注意</span>
-        <span class="progress-seg">警戒</span>
-        <span class="progress-seg">超警戒</span>
-      </div>
+  <div class="card" id="mainCard">
+    <span class="risk-pill" id="riskPill">---</span>
+    <div class="score-row">
+      <span class="score-num" id="riskScore">0.000</span>
+      <span class="score-unit">pt</span>
     </div>
-
-    <!-- Metrics -->
-    <div class="metrics-grid">
-      <div class="metric-card" style="--m-color:var(--accent-blue)">
-        <span class="metric-icon">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-        </span>
-        <div class="metric-info">
-          <div class="metric-lbl">気圧</div>
-          <div class="metric-val" id="mPress">----</div>
-          <div class="metric-unit">hPa</div>
-        </div>
-      </div>
-      <div class="metric-card" style="--m-color:var(--accent-orange)">
-        <span class="metric-icon">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
-          </svg>
-        </span>
-        <div class="metric-info">
-          <div class="metric-lbl">温度</div>
-          <div class="metric-val" id="mTemp">--.-</div>
-          <div class="metric-unit">℃</div>
-        </div>
-      </div>
-      <div class="metric-card" style="--m-color:var(--accent-cyan)">
-        <span class="metric-icon">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
-          </svg>
-        </span>
-        <div class="metric-info">
-          <div class="metric-lbl">湿度</div>
-          <div class="metric-val" id="mHumid">--</div>
-          <div class="metric-unit">%</div>
-        </div>
-      </div>
+    <div class="trend" id="trendText">計測中…</div>
+    <div id="mc-container">
+      <canvas id="mc"></canvas>
     </div>
-
-  </div><!-- /left-col -->
-
-  <!-- RIGHT -->
-  <div class="right-col">
-    <div class="card card-accent chart-card">
-      <div class="chart-header">
-        <span class="chart-title" id="chartTtl">気圧の推移</span>
-        <span class="chart-range" id="chartRange"></span>
-      </div>
-      <div class="chart-wrap">
-        <canvas id="mc" role="img" aria-label="時系列グラフ"></canvas>
-      </div>
-      <div class="update-bar">
-        <div class="mode-badge" id="modeBadge">● PRESS ONLY</div>
-        <div class="update-chip">
-          <span class="dot" id="statusDot"></span>
-          <span>最終更新</span>
-          <span class="update-time" id="lastUpdatedTime">--:--</span>
-          <span style="color:var(--text-dim);margin:0 2px">|</span>
-          <span>次の更新まで</span>
-          <span class="countdown-val" id="countdownDisp">--</span>
-          <span>秒</span>
-        </div>
-      </div>
-    </div>
-  </div><!-- /right-col -->
-
-</div><!-- /page -->
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-/* ── SHEETS API CONFIG ── */
-const SHEETS_API_KEY = 'AIzaSyAsueqj-8qHU6nejrrCqC2jY45OJMHy50I';
+const params = new URLSearchParams(window.location.search);
+const SHEETS_API_KEY = params.get('key');
 const SHEETS_ID      = '1fBLkhCdThAXbnHnr5ICaeIBT7WyoNh7KevnQLfpIVlA';
 const SHEETS_RANGE   = 'シート1!A2:G';
-const FETCH_INTERVAL = 60; // 60秒ごとにポーリング（データは10分毎記録）
-
-/* ── GRAPH MODE: "press" = 気圧グラフ固定, "rotate" = 4種ローテーション ── */
-// URLパラメータ graphMode=press または graphMode=rotate で切替
-// 例: barometric.html?graphMode=press  / barometric.html?graphMode=rotate
-const _urlParams    = new URLSearchParams(window.location.search);
-const GRAPH_MODE    = (_urlParams.get('graphMode') || 'rotate'); // デフォルト: rotate
-
-function parseSheetRows(rows) {
-  return rows
-    .filter(r => r.length >= 6 && r[2] && r[3] && r[4] && r[5])
-    .map(r => {
-      const dtStr = r[0] || '';
-      const timePart = dtStr.includes(' ') ? dtStr.split(' ')[1] : dtStr;
-      return {
-        t:    timePart.substring(0, 5),
-        p:    parseFloat(r[2]),
-        temp: parseFloat(r[3]),
-        h:    parseFloat(r[4]),
-        pred: parseFloat(r[5]),
-        raw:  dtStr  // タイムスタンプ文字列を保持
-      };
-    })
-    .filter(r => !isNaN(r.p) && !isNaN(r.temp) && !isNaN(r.h) && !isNaN(r.pred));
-}
 
 async function fetchSheetData() {
-  // 取得中はドットをオレンジに
-  const dot = document.getElementById('statusDot');
-  if (dot) dot.classList.add('fetching');
-
+  if (!SHEETS_API_KEY) return null;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_ID}/values/${encodeURIComponent(SHEETS_RANGE)}?key=${SHEETS_API_KEY}`;
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     const rows = json.values || [];
-    if (!rows.length) throw new Error('データなし');
-    const parsed = parseSheetRows(rows);
-    if (!parsed.length) throw new Error('パース失敗');
-
-    // 成功: 最終更新時刻をスプレッドシートの最終行タイムスタンプから取得
-    const lastRow = parsed[parsed.length - 1];
-    const timeEl = document.getElementById('lastUpdatedTime');
-    if (timeEl) timeEl.textContent = lastRow.t || '--:--';
-    if (dot) dot.classList.remove('fetching');
-
-    return parsed;
-  } catch (e) {
-    console.error('Sheets API エラー:', e);
-    if (dot) dot.classList.remove('fetching');
-    return null;
-  }
+    return rows.filter(r => r.length >= 6 && r[5]).map(r => ({
+      t: (r[0]||'').includes(' ') ? r[0].split(' ')[1].substring(0,5) : (r[0]||'').substring(0,5),
+      pred: parseFloat(r[5])
+    })).filter(r => !isNaN(r.pred));
+  } catch (e) { return null; }
 }
 
-/* ── LEVELS ── */
 const LVL = [
-  {max:0.5,  lb:'安定',     bg:'rgba(0,229,160,.12)',  fg:'#00e5a0',bar:'#00e5a0',glow:'rgba(0,229,160,.3)',  grad:'linear-gradient(135deg,#00e5a0,#00d4ff)',pct:5},
-  {max:1.4,  lb:'やや注意', bg:'rgba(93,232,122,.12)', fg:'#5de87a',bar:'#5de87a',glow:'rgba(93,232,122,.3)', grad:'linear-gradient(135deg,#5de87a,#00d4ff)',pct:28},
-  {max:2.96, lb:'注意',     bg:'rgba(255,184,48,.12)', fg:'#ffb830',bar:'#ffb830',glow:'rgba(255,184,48,.3)', grad:'linear-gradient(135deg,#ffb830,#ff8c42)',pct:55},
-  {max:3.8,  lb:'警戒',     bg:'rgba(255,100,56,.12)', fg:'#ff6438',bar:'#ff6438',glow:'rgba(255,100,56,.3)', grad:'linear-gradient(135deg,#ff6438,#ff4560)',pct:76},
-  {max:1e9,  lb:'超警戒',   bg:'rgba(255,69,96,.15)',  fg:'#ff4560',bar:'#ff4560',glow:'rgba(255,69,96,.35)', grad:'linear-gradient(135deg,#ff4560,#ff0080)',pct:96}
+  {max:0.5,  lb:'安定',     fg:'#00e5a0', glow:'rgba(0,229,160,.3)'},
+  {max:1.4,  lb:'やや注意', fg:'#5de87a', glow:'rgba(93,232,122,.3)'},
+  {max:2.96, lb:'注意',     fg:'#ffb830', glow:'rgba(255,184,48,.3)'},
+  {max:3.8,  lb:'警戒',     fg:'#ff6438', glow:'rgba(255,100,56,.3)'},
+  {max:1e9,  lb:'超警戒',   fg:'#ff4560', glow:'rgba(255,69,96,.35)'}
 ];
 const getLv = v => LVL.find(l => v < l.max) || LVL[4];
 
-/* ── STATE ── */
-let liveData       = [];
-let currentMode    = 'press';
-let mainChart      = null;
-let prevPred       = null;
-let fetchCountdown = FETCH_INTERVAL;
-let rotateIndex    = 0;
-let rotateTick     = 15;
-const ROTATE_INTERVAL = 15;
-const MODE_KEYS = ['press', 'pred', 'temp', 'humid'];
+let mainChart = null;
 
-/* ── MODE BADGE UPDATE ── */
-function updateModeBadge() {
-  const badge = document.getElementById('modeBadge');
-  if (!badge) return;
-  if (GRAPH_MODE === 'press') {
-    badge.textContent = '● 気圧グラフ 固定';
-    badge.style.color = 'var(--accent-blue)';
-    badge.style.borderColor = 'rgba(74,143,255,0.30)';
-    badge.style.background  = 'rgba(74,143,255,0.07)';
-  } else {
-    const modeLabels = {press:'気圧', pred:'予測スコア', temp:'温度', humid:'湿度'};
-    badge.textContent = '↻ ' + (modeLabels[currentMode] || currentMode) + ' — 自動切替';
-    badge.style.color = 'var(--accent-cyan)';
-    badge.style.borderColor = 'rgba(0,212,255,0.25)';
-    badge.style.background  = 'rgba(0,212,255,0.07)';
-  }
-}
+function render(data) {
+  if (!data || !data.length) return;
+  const d = data[data.length - 1];
+  const lv = getLv(d.pred);
+  const pill = document.getElementById('riskPill');
+  pill.textContent = lv.lb;
+  pill.style.color = lv.fg;
+  pill.style.borderColor = lv.fg;
+  document.getElementById('riskScore').textContent = d.pred.toFixed(3);
+  document.body.style.setProperty('--risk-glow', lv.glow);
 
-/* ── CHART ── */
-const MODES = {
-  press: {key:'p',    color:'#4a8fff',fill:'rgba(74,143,255,.13)', ttl:'気圧の推移',         unit:'hPa',dec:2},
-  pred:  {key:'pred', color:'#00e5a0',fill:'rgba(0,229,160,.13)',  ttl:'頭痛予測スコアの推移', unit:'',  dec:3},
-  temp:  {key:'temp', color:'#ff8c42',fill:'rgba(255,140,66,.13)', ttl:'温度の推移',           unit:'℃', dec:1},
-  humid: {key:'h',    color:'#a78bfa',fill:'rgba(167,139,250,.13)',ttl:'湿度の推移',           unit:'%', dec:0}
-};
-const MONO = {family:"'Space Mono',monospace"};
-const GC = 'rgba(80,120,255,0.10)';
-const TC = 'rgba(180,210,255,0.70)';
-
-function buildChart(mode) {
-  if (!liveData.length) return;
-  const cfg  = MODES[mode];
-  const vals = liveData.map(r => r[cfg.key]);
-  const lbls = liveData.map(r => r.t);
-  const mn   = Math.min(...vals), mxv = Math.max(...vals);
-  const pad  = Math.max((mxv - mn) * .18, .05);
-
-  const ttlEl = document.getElementById('chartTtl');
-  if (ttlEl) ttlEl.textContent = cfg.ttl;
-  const rangeEl = document.getElementById('chartRange');
-  if (rangeEl) rangeEl.textContent = mn.toFixed(cfg.dec) + ' – ' + mxv.toFixed(cfg.dec) + (cfg.unit ? ' ' + cfg.unit : '');
-
-  const chartCard = document.querySelector('.chart-card');
-  if (chartCard) chartCard.style.setProperty('--card-accent', cfg.color);
-
-  const canvas = document.getElementById('mc');
-  if (!canvas) return;
   if (mainChart) mainChart.destroy();
-  mainChart = new Chart(canvas, {
+  mainChart = new Chart(document.getElementById('mc'), {
     type: 'line',
     data: {
-      labels: lbls,
+      labels: data.slice(-12).map(r => r.t),
       datasets: [{
-        data: vals,
-        borderColor: cfg.color,
-        backgroundColor: cfg.fill,
-        borderWidth: 5,
+        data: data.slice(-12).map(r => r.pred),
+        borderColor: lv.fg,
+        borderWidth: 2,
         pointRadius: 0,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: cfg.color,
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2,
-        fill: true,
-        tension: 0.38
+        fill: false,
+        tension: 0.4
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: {duration: 250},
-      interaction: {mode: 'index', intersect: false},
-      plugins: {
-        legend: {display: false},
-        tooltip: {
-          backgroundColor: 'rgba(8,12,26,0.97)',
-          borderColor: cfg.color, borderWidth: 1.5,
-          titleColor: 'rgba(190,215,255,0.85)', bodyColor: cfg.color,
-          padding: 12, caretSize: 6, cornerRadius: 8,
-          titleFont: {...MONO, size: 11},
-          bodyFont: {...MONO, size: 15, weight: '700'},
-          callbacks: {
-            title: items => items[0].label,
-            label: c => '  ' + c.parsed.y.toFixed(cfg.dec) + (cfg.unit ? ' ' + cfg.unit : '')
-          }
-        }
-      },
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: {display: false} },
       scales: {
-        y: {
-          min: mn - pad, max: mxv + pad,
-          ticks: {color: TC, font: {...MONO, size: 13}, maxTicksLimit: 7, padding: 8,
-            callback: v => v.toFixed(cfg.dec) + (cfg.unit ? ' ' + cfg.unit : '')},
-          grid: {color: GC, lineWidth: 1},
-          border: {color: 'transparent', dash: [4, 4]}
-        },
-        x: {
-          ticks: {color: TC, font: {...MONO, size: 11}, maxRotation: 45, autoSkip: true, maxTicksLimit: 12, padding: 6},
-          grid: {color: GC, lineWidth: 1},
-          border: {color: 'transparent'}
-        }
+        y: { display: false },
+        x: { ticks: { display: false }, grid: { display: false } }
       }
     }
   });
 }
 
-function render() {
-  if (!liveData.length) return;
-  const d  = liveData.at(-1);
-  const lv = getLv(d.pred);
-
-  const rc = document.getElementById('riskCard');
-  if (rc) {
-    rc.style.setProperty('--card-accent',   lv.grad);
-    rc.style.setProperty('--risk-gradient', lv.grad);
-    rc.style.setProperty('--risk-bar',      lv.bar);
-    rc.style.setProperty('--risk-glow',     lv.glow);
-  }
-
-  const pill = document.getElementById('riskPill');
-  if (pill) {
-    pill.textContent        = lv.lb;
-    pill.style.background   = lv.bg;
-    pill.style.color        = lv.fg;
-    pill.style.borderColor  = lv.fg;
-  }
-
-  const scoreEl = document.getElementById('riskScore');
-  if (scoreEl) scoreEl.textContent = d.pred.toFixed(3);
-  const progFill = document.getElementById('progressFill');
-  if (progFill) progFill.style.width = lv.pct + '%';
-
-  const icon = document.getElementById('trendIcon');
-  const txt  = document.getElementById('trendText');
-  if (prevPred !== null && icon && txt) {
-    const diff = d.pred - prevPred;
-    if (Math.abs(diff) < .005) {
-      icon.innerHTML = '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>';
-      icon.style.color = 'var(--text-dim)'; txt.textContent = '安定';
-    } else if (diff > 0) {
-      icon.innerHTML = '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>';
-      icon.style.color = '#ff6438'; txt.textContent = '上昇中 +' + diff.toFixed(3);
-    } else {
-      icon.innerHTML = '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>';
-      icon.style.color = '#00e5a0'; txt.textContent = '低下中 ' + diff.toFixed(3);
-    }
-  }
-  prevPred = d.pred;
-
-  const mPress = document.getElementById('mPress'); if (mPress) mPress.textContent = d.p.toFixed(2);
-  const mTemp  = document.getElementById('mTemp');  if (mTemp)  mTemp.textContent  = d.temp.toFixed(1);
-  const mHumid = document.getElementById('mHumid'); if (mHumid) mHumid.textContent = d.h;
-
-  buildChart(currentMode);
-  updateModeBadge();
-}
-
-/* ── MAIN LOOP ── */
-function tick() {
-  // Sheets API再取得カウントダウン
-  fetchCountdown--;
-  if (fetchCountdown <= 0) {
-    fetchCountdown = FETCH_INTERVAL;
-    fetchSheetData().then(data => {
-      if (data && data.length) { liveData = data; render(); }
-    });
-  }
-
-  // カウントダウン表示更新（デクリメント後に表示）
-  const cdEl = document.getElementById('countdownDisp');
-  if (cdEl) cdEl.textContent = fetchCountdown;
-
-  // グラフローテーション（rotateモード時のみ、15秒ごと）
-  if (GRAPH_MODE === 'rotate') {
-    rotateTick--;
-    if (rotateTick <= 0) {
-      rotateIndex = (rotateIndex + 1) % MODE_KEYS.length;
-      currentMode = MODE_KEYS[rotateIndex];
-      rotateTick  = ROTATE_INTERVAL;
-      buildChart(currentMode);
-      updateModeBadge();
-    }
-  }
-}
-
-/* ── INIT ── */
 (async () => {
-  // pressモード固定の場合はcurrentModeを'press'のまま固定
-  if (GRAPH_MODE === 'press') {
-    currentMode = 'press';
-  }
-  updateModeBadge();
-
   const data = await fetchSheetData();
-  if (data && data.length) {
-    liveData = data;
-  } else {
-    const now = new Date();
-    const t = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-    liveData = [{t, p:1013.00, temp:25.0, h:60, pred:0.5}];
-  }
-  render();
-  setInterval(tick, 1000);
+  if (data) render(data);
+  setInterval(async () => {
+    const data = await fetchSheetData();
+    if (data) render(data);
+  }, 60000);
 })();
 </script>
 </body>
