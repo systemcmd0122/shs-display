@@ -7,8 +7,10 @@ import 'dart:async';
 import 'dart:convert';
 
 void main() {
-  final String calendarId1 = "c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com";
-  final String calendarId2 = "c_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com&ctz=Asia%2FTokyo";
+  final String calendarId1 =
+      "c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com";
+  final String calendarId2 =
+      "c_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com&ctz=Asia%2FTokyo";
   final String combinedUrl =
       "https://calendar.google.com/calendar/embed"
       "?src=$calendarId1"
@@ -22,43 +24,43 @@ void main() {
       "&mode=AGENDA"
       "&bgcolor=%23ffffff";
 
-  ui_web.platformViewRegistry.registerViewFactory(
-    'calendar-view',
-    (int viewId) {
-      final el = web.document.createElement('iframe') as web.HTMLIFrameElement;
-      el.src = combinedUrl;
-      el.style.border = 'none';
-      el.width = '100%';
-      el.height = '100%';
-      return el;
-    },
-  );
+  ui_web.platformViewRegistry.registerViewFactory('calendar-view', (
+    int viewId,
+  ) {
+    final el = web.document.createElement('iframe') as web.HTMLIFrameElement;
+    el.src = combinedUrl;
+    el.style.border = 'none';
+    el.width = '100%';
+    el.height = '100%';
+    return el;
+  });
 
   // graphMode: 'press' = 気圧グラフ固定, 'rotate' = 4種ローテーション
-  const String barometricGraphMode = 'rotate'; // 'press' または 'rotate'
+  const String barometricGraphMode = 'press'; // 'press' または 'rotate'
 
-  ui_web.platformViewRegistry.registerViewFactory(
-    'barometric-view',
-    (int viewId) {
-      final el = web.document.createElement('iframe') as web.HTMLIFrameElement;
-      el.src = 'barometric.html?graphMode=$barometricGraphMode';
-      el.style.border = 'none';
-      el.width = '100%';
-      el.height = '100%';
-      return el;
-    },
-  );
+  ui_web.platformViewRegistry.registerViewFactory('barometric-view', (
+    int viewId,
+  ) {
+    final el = web.document.createElement('iframe') as web.HTMLIFrameElement;
+    el.src = 'barometric.html?graphMode=$barometricGraphMode';
+    el.style.border = 'none';
+    el.width = '100%';
+    el.height = '100%';
+    return el;
+  });
 
-  runApp(MaterialApp(
-    title: '佐土原高校 デジタルサイネージ',
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: Colors.black,
-      fontFamily: 'Roboto',
+  runApp(
+    MaterialApp(
+      title: '佐土原高校 デジタルサイネージ',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Colors.black,
+        fontFamily: 'Roboto',
+      ),
+      home: const SchoolBoard(),
     ),
-    home: const SchoolBoard(),
-  ));
+  );
 }
 
 class SchoolBoard extends StatelessWidget {
@@ -324,8 +326,9 @@ class InformationState extends State<Information> {
     const String gasUrl =
         "https://script.google.com/a/macros/g.miyazaki-c.ed.jp/s/AKfycbx73zYIPvjer7PG2vDc3LU46anf52pc0alkJY9p5bhMkK6963LaAO_2FDrV-wOHv-Kg/exec";
     try {
-      final response =
-          await http.get(Uri.parse(gasUrl)).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(Uri.parse(gasUrl))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (mounted) {
@@ -399,7 +402,10 @@ class WeatherPanelState extends State<WeatherPanel> {
   void initState() {
     super.initState();
     fetchWeather();
-    _timer = Timer.periodic(const Duration(hours: 1), (timer) => fetchWeather());
+    _timer = Timer.periodic(
+      const Duration(hours: 1),
+      (timer) => fetchWeather(),
+    );
   }
 
   @override
@@ -412,8 +418,9 @@ class WeatherPanelState extends State<WeatherPanel> {
     const String gasUrl =
         "https://script.google.com/macros/s/AKfycbySkWR4QxPsT7elLSs4-41tTOc1_VbsUjA1xjPVMpMdzaAWUqUTOMdDA7WuhySqwF74/exec";
     try {
-      final response =
-          await http.get(Uri.parse(gasUrl)).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(Uri.parse(gasUrl))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (mounted) {
@@ -465,7 +472,10 @@ class WeatherPanelState extends State<WeatherPanel> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(label, style: const TextStyle(fontSize: 18, color: Colors.white70)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 18, color: Colors.white70),
+            ),
             Image.network(
               'https://www.jma.go.jp/bosai/forecast/img/$displayCode.png',
               width: 80,
@@ -511,19 +521,27 @@ class WeatherPanelState extends State<WeatherPanel> {
 
   String _convertWeatherCode(String code) {
     if (code.length != 3) return code;
-    if (["103", "106", "107", "108", "120", "121", "140"].contains(code)) return "102";
+    if (["103", "106", "107", "108", "120", "121", "140"].contains(code)) {
+      return "102";
+    }
     if (["105", "160", "170"].contains(code)) return "104";
     if (code == "111") return "110";
-    if (["113", "114", "118", "119", "125", "126", "127", "128"].contains(code)) return "112";
+    if (["113", "114", "118", "119", "125", "126", "127", "128"].contains(code)) {
+      return "112";
+    }
     if (["116", "117", "181"].contains(code)) return "115";
     if (["123", "124", "130", "131"].contains(code)) return "100";
     if (code == "132") return "101";
     if (["209", "231"].contains(code)) return "200";
     if (code == "223") return "201";
-    if (["203", "206", "207", "208", "220", "221", "240"].contains(code)) return "202";
+    if (["203", "206", "207", "208", "220", "221", "240"].contains(code)) {
+      return "202";
+    }
     if (["205", "250", "260", "270"].contains(code)) return "204";
     if (code == "211") return "210";
-    if (["214", "213", "218", "219", "222", "224", "225", "226"].contains(code)) return "212";
+    if (["214", "213", "218", "219", "222", "224", "225", "226"].contains(code)) {
+      return "212";
+    }
     if (["216", "217", "228", "229", "230", "281"].contains(code)) return "215";
     if (["304", "306", "328", "329", "350"].contains(code)) return "300";
     if (["309", "322"].contains(code)) return "303";
@@ -562,7 +580,8 @@ class TripleTimetable extends StatelessWidget {
         Expanded(
           child: SingleTimetable(
             title: "JR佐土原駅 上り",
-            url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_nobori.csv",
+            url:
+                "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_nobori.csv",
             accentColor: Colors.blueAccent,
           ),
         ),
@@ -570,7 +589,8 @@ class TripleTimetable extends StatelessWidget {
         Expanded(
           child: SingleTimetable(
             title: "JR佐土原駅 下り",
-            url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_kudari.csv",
+            url:
+                "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_kudari.csv",
             accentColor: Colors.redAccent,
           ),
         ),
@@ -578,7 +598,8 @@ class TripleTimetable extends StatelessWidget {
         Expanded(
           child: SingleTimetable(
             title: "バス（佐土原高校前）",
-            url: "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_bus.csv",
+            url:
+                "https://sadowara.sakura.ne.jp/sadowara_display_csv/sadowara_bus.csv",
             accentColor: Colors.greenAccent,
           ),
         ),
@@ -702,7 +723,10 @@ class SingleTimetableState extends State<SingleTimetable> {
                 final List<dynamic> row = finalItems[index];
                 return Container(
                   width: 120,
-                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 2,
+                    horizontal: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
