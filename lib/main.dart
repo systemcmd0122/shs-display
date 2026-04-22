@@ -1,14 +1,12 @@
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 import 'package:http/http.dart' as http;
 import 'package:csv/csv.dart';
 import 'dart:async';
 import 'dart:convert';
 
 void main() {
-  // カレンダーのビューを一度だけ登録
   final String calendarId1 = "c_gfriete7qicavqkos59v358q7g%40group.calendar.google.com";
   final String calendarId2 = "c_sj0eumk3n4tan8kmgb4qjb0t78%40group.calendar.google.com&ctz=Asia%2FTokyo";
   final String combinedUrl =
@@ -26,20 +24,29 @@ void main() {
 
   ui_web.platformViewRegistry.registerViewFactory(
     'calendar-view',
-    (int viewId) => html.IFrameElement()
-      ..src = combinedUrl
-      ..style.border = 'none'
-      ..width = '100%'
-      ..height = '100%',
+    (int viewId) {
+      final el = web.document.createElement('iframe') as web.HTMLIFrameElement;
+      el.src = combinedUrl;
+      el.style.border = 'none';
+      el.width = '100%';
+      el.height = '100%';
+      return el;
+    },
   );
+
+  // graphMode: 'press' = 気圧グラフ固定, 'rotate' = 4種ローテーション
+  const String barometricGraphMode = 'rotate'; // 'press' または 'rotate'
 
   ui_web.platformViewRegistry.registerViewFactory(
     'barometric-view',
-    (int viewId) => html.IFrameElement()
-      ..src = 'barometric.html?graphOnly=true'
-      ..style.border = 'none'
-      ..width = '100%'
-      ..height = '100%',
+    (int viewId) {
+      final el = web.document.createElement('iframe') as web.HTMLIFrameElement;
+      el.src = 'barometric.html?graphMode=$barometricGraphMode';
+      el.style.border = 'none';
+      el.width = '100%';
+      el.height = '100%';
+      return el;
+    },
   );
 
   runApp(MaterialApp(
@@ -47,15 +54,16 @@ void main() {
     debugShowCheckedModeBanner: false,
     theme: ThemeData(
       brightness: Brightness.dark,
-      primaryColor: Colors.blueGrey[900],
       scaffoldBackgroundColor: Colors.black,
       fontFamily: 'Roboto',
     ),
-    home: SchoolBoard(),
+    home: const SchoolBoard(),
   ));
 }
 
 class SchoolBoard extends StatelessWidget {
+  const SchoolBoard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,9 +74,9 @@ class SchoolBoard extends StatelessWidget {
             child: Column(
               children: [
                 // 上部: 時計と天気
-                Container(
+                SizedBox(
                   height: constraints.maxHeight * 0.20,
-                  child: Row(
+                  child: const Row(
                     children: [
                       Expanded(flex: 4, child: DigitalClock()),
                       VerticalDivider(color: Colors.white24, width: 32),
@@ -76,15 +84,15 @@ class SchoolBoard extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 // 中央: 頭痛予報、カレンダー
-                Expanded(
+                const Expanded(
                   child: Row(
                     children: [
                       Expanded(
                         flex: 6,
                         child: PanelContainer(
-                          title: "頭痛予報",
+                          title: "頭痛予報（頭痛ナビ）Created by 情報技術部アプリ班",
                           icon: Icons.speed,
                           child: HeadacheForecastView(),
                         ),
@@ -101,9 +109,9 @@ class SchoolBoard extends StatelessWidget {
                     ],
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 // 下部: お知らせ、時刻表
-                Container(
+                SizedBox(
                   height: constraints.maxHeight * 0.28,
                   child: Row(
                     children: [
@@ -113,11 +121,11 @@ class SchoolBoard extends StatelessWidget {
                           title: "お知らせ",
                           icon: Icons.campaign,
                           headerColor: Colors.orange[800]!,
-                          child: Information(),
+                          child: const Information(),
                         ),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
+                      const SizedBox(width: 12),
+                      const Expanded(
                         flex: 6,
                         child: PanelContainer(
                           title: "交通機関時刻表",
@@ -144,6 +152,7 @@ class PanelContainer extends StatelessWidget {
   final Color? headerColor;
 
   const PanelContainer({
+    super.key,
     required this.title,
     required this.child,
     required this.icon,
@@ -154,14 +163,14 @@ class PanelContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF1A1A1A),
+        color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 10,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -169,15 +178,15 @@ class PanelContainer extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: headerColor ?? Colors.blueGrey[800],
             child: Row(
               children: [
                 Icon(icon, size: 22, color: Colors.white),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.2,
@@ -194,16 +203,19 @@ class PanelContainer extends StatelessWidget {
 }
 
 class DigitalClock extends StatelessWidget {
+  const DigitalClock({super.key});
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: Stream.periodic(Duration(seconds: 1)),
+      stream: Stream.periodic(const Duration(seconds: 1)),
       builder: (context, snapshot) {
         final now = DateTime.now();
-        final timeStr = "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+        final timeStr =
+            "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
         final secondStr = now.second.toString().padLeft(2, '0');
         final dateStr = "${now.year}年 ${now.month}月 ${now.day}日";
-        final weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+        const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
         final weekDayStr = "（${weekDays[now.weekday % 7]}）";
 
         return FittedBox(
@@ -213,7 +225,7 @@ class DigitalClock extends StatelessWidget {
             children: [
               Text(
                 dateStr + weekDayStr,
-                style: TextStyle(fontSize: 24, color: Colors.white70),
+                style: const TextStyle(fontSize: 24, color: Colors.white70),
               ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -221,20 +233,20 @@ class DigitalClock extends StatelessWidget {
                 children: [
                   Text(
                     timeStr,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 100,
                       fontWeight: FontWeight.w900,
                       color: Colors.cyanAccent,
                       fontFamily: 'monospace',
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     secondStr,
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: Colors.cyanAccent.withOpacity(0.7),
+                      color: Colors.cyanAccent.withValues(alpha: 0.7),
                       fontFamily: 'monospace',
                     ),
                   ),
@@ -249,11 +261,13 @@ class DigitalClock extends StatelessWidget {
 }
 
 class Information extends StatefulWidget {
+  const Information({super.key});
+
   @override
-  _InformationState createState() => _InformationState();
+  InformationState createState() => InformationState();
 }
 
-class _InformationState extends State<Information> {
+class InformationState extends State<Information> {
   String newsMessage = "お知らせを読み込み中...";
   Timer? _timer;
   Timer? _scrollTimer;
@@ -263,9 +277,9 @@ class _InformationState extends State<Information> {
   void initState() {
     super.initState();
     fetchNews().then((_) {
-      Future.delayed(Duration(seconds: 2), () => _startAutoScroll());
+      Future.delayed(const Duration(seconds: 2), () => _startAutoScroll());
     });
-    _timer = Timer.periodic(Duration(minutes: 5), (timer) => fetchNews());
+    _timer = Timer.periodic(const Duration(minutes: 5), (timer) => fetchNews());
   }
 
   @override
@@ -278,21 +292,24 @@ class _InformationState extends State<Information> {
 
   void _startAutoScroll() {
     _scrollTimer?.cancel();
-    _scrollTimer = Timer.periodic(Duration(milliseconds: 40), (timer) {
+    _scrollTimer = Timer.periodic(const Duration(milliseconds: 40), (timer) {
       if (_scrollController.hasClients) {
-        double maxScroll = _scrollController.position.maxScrollExtent;
-        double currentScroll = _scrollController.position.pixels;
+        final double maxScroll = _scrollController.position.maxScrollExtent;
+        final double currentScroll = _scrollController.position.pixels;
         if (maxScroll > 0) {
           if (currentScroll >= maxScroll) {
             _scrollTimer?.cancel();
-            Future.delayed(Duration(seconds: 5), () {
+            Future.delayed(const Duration(seconds: 5), () {
               if (mounted) {
                 _scrollController.animateTo(
                   0,
-                  duration: Duration(milliseconds: 1500),
+                  duration: const Duration(milliseconds: 1500),
                   curve: Curves.easeInOut,
                 );
-                Future.delayed(Duration(seconds: 3), () => _startAutoScroll());
+                Future.delayed(
+                  const Duration(seconds: 3),
+                  () => _startAutoScroll(),
+                );
               }
             });
           } else {
@@ -304,17 +321,18 @@ class _InformationState extends State<Information> {
   }
 
   Future<void> fetchNews() async {
-    const String gasUrl = "https://script.google.com/a/macros/g.miyazaki-c.ed.jp/s/AKfycbx73zYIPvjer7PG2vDc3LU46anf52pc0alkJY9p5bhMkK6963LaAO_2FDrV-wOHv-Kg/exec";
+    const String gasUrl =
+        "https://script.google.com/a/macros/g.miyazaki-c.ed.jp/s/AKfycbx73zYIPvjer7PG2vDc3LU46anf52pc0alkJY9p5bhMkK6963LaAO_2FDrV-wOHv-Kg/exec";
     try {
-      final response = await http.get(Uri.parse(gasUrl)).timeout(Duration(seconds: 10));
+      final response =
+          await http.get(Uri.parse(gasUrl)).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (mounted) {
           setState(() {
             newsMessage = data['message'] ?? "お知らせはありません。";
           });
-          // 内容が更新されたらスクロールをリセットして再開
-          Future.delayed(Duration(seconds: 1), () {
+          Future.delayed(const Duration(seconds: 1), () {
             if (mounted && _scrollController.hasClients) {
               _scrollController.jumpTo(0);
               _startAutoScroll();
@@ -323,7 +341,7 @@ class _InformationState extends State<Information> {
         }
       }
     } catch (e) {
-      print("お知らせ取得エラー: $e");
+      debugPrint("お知らせ取得エラー: $e");
       if (mounted) {
         setState(() {
           if (newsMessage == "お知らせを読み込み中...") {
@@ -336,19 +354,16 @@ class _InformationState extends State<Information> {
 
   @override
   Widget build(BuildContext context) {
-    double fontSize = 44;
-    if (newsMessage.length > 200) {
-      fontSize = 32;
-    }
+    final double fontSize = newsMessage.length > 200 ? 32 : 44;
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Scrollbar(
         controller: _scrollController,
         thumbVisibility: true,
         child: SingleChildScrollView(
           controller: _scrollController,
-          physics: BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           child: Center(
             child: Text(
               newsMessage,
@@ -368,11 +383,13 @@ class _InformationState extends State<Information> {
 }
 
 class WeatherPanel extends StatefulWidget {
+  const WeatherPanel({super.key});
+
   @override
-  _WeatherPanelState createState() => _WeatherPanelState();
+  WeatherPanelState createState() => WeatherPanelState();
 }
 
-class _WeatherPanelState extends State<WeatherPanel> {
+class WeatherPanelState extends State<WeatherPanel> {
   Map<String, dynamic>? today;
   Map<String, dynamic>? tomorrow;
   String errorMsg = "";
@@ -382,7 +399,7 @@ class _WeatherPanelState extends State<WeatherPanel> {
   void initState() {
     super.initState();
     fetchWeather();
-    _timer = Timer.periodic(Duration(hours: 1), (timer) => fetchWeather());
+    _timer = Timer.periodic(const Duration(hours: 1), (timer) => fetchWeather());
   }
 
   @override
@@ -392,9 +409,11 @@ class _WeatherPanelState extends State<WeatherPanel> {
   }
 
   Future<void> fetchWeather() async {
-    const String gasUrl = "https://script.google.com/macros/s/AKfycbySkWR4QxPsT7elLSs4-41tTOc1_VbsUjA1xjPVMpMdzaAWUqUTOMdDA7WuhySqwF74/exec";
+    const String gasUrl =
+        "https://script.google.com/macros/s/AKfycbySkWR4QxPsT7elLSs4-41tTOc1_VbsUjA1xjPVMpMdzaAWUqUTOMdDA7WuhySqwF74/exec";
     try {
-      final response = await http.get(Uri.parse(gasUrl)).timeout(Duration(seconds: 10));
+      final response =
+          await http.get(Uri.parse(gasUrl)).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (mounted) {
@@ -408,7 +427,7 @@ class _WeatherPanelState extends State<WeatherPanel> {
         throw Exception("Status code: ${response.statusCode}");
       }
     } catch (e) {
-      print("天気取得エラー: $e");
+      debugPrint("天気取得エラー: $e");
       if (mounted) {
         setState(() => errorMsg = "天気予報の取得に失敗しました");
       }
@@ -418,25 +437,27 @@ class _WeatherPanelState extends State<WeatherPanel> {
   @override
   Widget build(BuildContext context) {
     if (errorMsg.isNotEmpty && today == null) {
-      return Center(child: Text(errorMsg, style: TextStyle(color: Colors.redAccent)));
+      return Center(
+        child: Text(errorMsg, style: const TextStyle(color: Colors.redAccent)),
+      );
     }
     if (today == null) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildWeatherColumn("今日", today!),
-        VerticalDivider(color: Colors.white10, indent: 20, endIndent: 20),
+        const VerticalDivider(color: Colors.white10, indent: 20, endIndent: 20),
         _buildWeatherColumn("明日", tomorrow!),
       ],
     );
   }
 
   Widget _buildWeatherColumn(String label, Map<String, dynamic> data) {
-    String code = data['code'] ?? "100";
-    String displayCode = _convertWeatherCode(code);
+    final String code = data['code'] ?? "100";
+    final String displayCode = _convertWeatherCode(code);
 
     return Expanded(
       child: FittedBox(
@@ -444,26 +465,41 @@ class _WeatherPanelState extends State<WeatherPanel> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(label, style: TextStyle(fontSize: 18, color: Colors.white70)),
+            Text(label, style: const TextStyle(fontSize: 18, color: Colors.white70)),
             Image.network(
               'https://www.jma.go.jp/bosai/forecast/img/$displayCode.png',
               width: 80,
               height: 80,
-              errorBuilder: (context, error, stackTrace) => Icon(Icons.wb_cloudy, size: 64),
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.wb_cloudy, size: 64),
             ),
             Text(
               data['desc'] ?? "",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (data['high'] != null && data['high'] != "--")
-                  Text("${data['high']}°", style: TextStyle(fontSize: 24, color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
+                  Text(
+                    "${data['high']}°",
+                    style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.orangeAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 if (data['low'] != null && data['low'] != "--") ...[
-                  SizedBox(width: 8),
-                  Text("${data['low']}°", style: TextStyle(fontSize: 24, color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Text(
+                    "${data['low']}°",
+                    style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.blueAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -475,7 +511,6 @@ class _WeatherPanelState extends State<WeatherPanel> {
 
   String _convertWeatherCode(String code) {
     if (code.length != 3) return code;
-    // 既存のロジックを流用（簡略化も可能だが互換性を重視）
     if (["103", "106", "107", "108", "120", "121", "140"].contains(code)) return "102";
     if (["105", "160", "170"].contains(code)) return "104";
     if (code == "111") return "110";
@@ -500,23 +535,29 @@ class _WeatherPanelState extends State<WeatherPanel> {
 }
 
 class GoogleCalendarView extends StatelessWidget {
+  const GoogleCalendarView({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return HtmlElementView(viewType: 'calendar-view');
+    return const HtmlElementView(viewType: 'calendar-view');
   }
 }
 
 class HeadacheForecastView extends StatelessWidget {
+  const HeadacheForecastView({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return HtmlElementView(viewType: 'barometric-view');
+    return const HtmlElementView(viewType: 'barometric-view');
   }
 }
 
 class TripleTimetable extends StatelessWidget {
+  const TripleTimetable({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       children: [
         Expanded(
           child: SingleTimetable(
@@ -551,13 +592,18 @@ class SingleTimetable extends StatefulWidget {
   final String url;
   final Color accentColor;
 
-  SingleTimetable({required this.title, required this.url, required this.accentColor});
+  const SingleTimetable({
+    super.key,
+    required this.title,
+    required this.url,
+    required this.accentColor,
+  });
 
   @override
-  _SingleTimetableState createState() => _SingleTimetableState();
+  SingleTimetableState createState() => SingleTimetableState();
 }
 
-class _SingleTimetableState extends State<SingleTimetable> {
+class SingleTimetableState extends State<SingleTimetable> {
   List<List<dynamic>> _data = [];
   bool _isLoading = true;
   Timer? _timer;
@@ -566,7 +612,7 @@ class _SingleTimetableState extends State<SingleTimetable> {
   void initState() {
     super.initState();
     _fetchCSV();
-    _timer = Timer.periodic(Duration(minutes: 5), (t) => _fetchCSV());
+    _timer = Timer.periodic(const Duration(minutes: 5), (t) => _fetchCSV());
   }
 
   @override
@@ -577,9 +623,11 @@ class _SingleTimetableState extends State<SingleTimetable> {
 
   Future<void> _fetchCSV() async {
     try {
-      final response = await http.get(Uri.parse(widget.url)).timeout(Duration(seconds: 10));
+      final response = await http
+          .get(Uri.parse(widget.url))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
-        String csvData = utf8.decode(response.bodyBytes);
+        final String csvData = utf8.decode(response.bodyBytes);
         if (mounted) {
           setState(() {
             _data = const CsvDecoder().convert(csvData);
@@ -588,21 +636,23 @@ class _SingleTimetableState extends State<SingleTimetable> {
         }
       }
     } catch (e) {
-      print("${widget.title} エラー: $e");
+      debugPrint("${widget.title} エラー: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return Center(child: CircularProgressIndicator(strokeWidth: 2));
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
 
     final now = DateTime.now();
-    final currentTotalMinutes = now.hour * 60 + now.minute;
+    final int currentTotalMinutes = now.hour * 60 + now.minute;
 
     List<List<dynamic>> displayData = _data.skip(1).where((row) {
       if (row.length < 3) return false;
       final String timeStr = row[1].toString().trim();
-      final parts = timeStr.split(':');
+      final List<String> parts = timeStr.split(':');
       if (parts.length != 2) return false;
       final int rowHour = int.parse(parts[0]);
       final int rowMinute = int.parse(parts[1]);
@@ -613,7 +663,7 @@ class _SingleTimetableState extends State<SingleTimetable> {
       displayData = _data.skip(1).toList();
     }
 
-    final finalItems = displayData.take(20).toList();
+    final List<List<dynamic>> finalItems = displayData.take(20).toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -630,10 +680,10 @@ class _SingleTimetableState extends State<SingleTimetable> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 widget.title,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
@@ -642,22 +692,22 @@ class _SingleTimetableState extends State<SingleTimetable> {
               ),
             ],
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Expanded(
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: finalItems.length,
-              separatorBuilder: (context, index) => SizedBox(width: 8),
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                final row = finalItems[index];
+                final List<dynamic> row = finalItems[index];
                 return Container(
                   width: 120,
-                  padding: EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
+                    color: Colors.white.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: widget.accentColor.withOpacity(0.3),
+                      color: widget.accentColor.withValues(alpha: 0.3),
                       width: 1.5,
                     ),
                   ),
@@ -668,7 +718,7 @@ class _SingleTimetableState extends State<SingleTimetable> {
                       children: [
                         Text(
                           row[1].toString(),
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.orangeAccent,
                             fontSize: 32,
                             fontWeight: FontWeight.w900,
@@ -678,7 +728,7 @@ class _SingleTimetableState extends State<SingleTimetable> {
                         ),
                         Text(
                           row[2].toString(),
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 13,
                             fontWeight: FontWeight.w900,
