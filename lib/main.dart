@@ -256,20 +256,51 @@ class Information extends StatefulWidget {
 class _InformationState extends State<Information> {
   String newsMessage = "お知らせを読み込み中...";
   Timer? _timer;
+  Timer? _scrollTimer;
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    fetchNews();
+    fetchNews().then((_) {
+      Future.delayed(Duration(seconds: 2), () => _startAutoScroll());
+    });
     _timer = Timer.periodic(Duration(minutes: 5), (timer) => fetchNews());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _scrollTimer?.cancel();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _startAutoScroll() {
+    _scrollTimer?.cancel();
+    _scrollTimer = Timer.periodic(Duration(milliseconds: 40), (timer) {
+      if (_scrollController.hasClients) {
+        double maxScroll = _scrollController.position.maxScrollExtent;
+        double currentScroll = _scrollController.position.pixels;
+        if (maxScroll > 0) {
+          if (currentScroll >= maxScroll) {
+            _scrollTimer?.cancel();
+            Future.delayed(Duration(seconds: 5), () {
+              if (mounted) {
+                _scrollController.animateTo(
+                  0,
+                  duration: Duration(milliseconds: 1500),
+                  curve: Curves.easeInOut,
+                );
+                Future.delayed(Duration(seconds: 3), () => _startAutoScroll());
+              }
+            });
+          } else {
+            _scrollController.jumpTo(currentScroll + 0.6);
+          }
+        }
+      }
+    });
   }
 
   Future<void> fetchNews() async {
@@ -281,6 +312,13 @@ class _InformationState extends State<Information> {
         if (mounted) {
           setState(() {
             newsMessage = data['message'] ?? "お知らせはありません。";
+          });
+          // 内容が更新されたらスクロールをリセットして再開
+          Future.delayed(Duration(seconds: 1), () {
+            if (mounted && _scrollController.hasClients) {
+              _scrollController.jumpTo(0);
+              _startAutoScroll();
+            }
           });
         }
       }
